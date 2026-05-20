@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanemi OS — Centre de Commandement</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--orange:#FF6A00;--od:#cc5200;--og:rgba(255,106,0,0.12);--og2:rgba(255,106,0,0.06);--black:#0a0a0a;--s1:#111111;--s2:#1a1a1a;--s3:#242424;--bd:rgba(255,255,255,0.07);--bd2:rgba(255,255,255,0.13);--tx:#f0ede8;--txm:#888880;--txd:#444440;--green:#4ade80;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;--teal:#2dd4bf;--purple:#a78bfa;--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;--r:10px;--rl:16px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--black);color:var(--tx);font-family:var(--fb);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.auth-box{background:var(--s1);border:.5px solid var(--bd2);border-radius:var(--rl);padding:40px;width:100%;max-width:400px;text-align:center}
+.auth-logo{width:52px;height:52px;border-radius:12px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:24px;color:#000;margin:0 auto 20px}
+.auth-title{font-family:var(--fd);font-weight:800;font-size:26px;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--txm);margin-bottom:28px}
+.ai{width:100%;background:var(--s2);border:.5px solid var(--bd2);color:var(--tx);border-radius:var(--r);padding:12px 16px;font-family:var(--fb);font-size:14px;outline:none;margin-bottom:12px;transition:border-color .15s}
+.ai:focus{border-color:var(--orange)}
+.ab{width:100%;padding:12px;border-radius:var(--r);border:none;background:var(--orange);color:#000;font-family:var(--fd);font-weight:700;font-size:15px;cursor:pointer;transition:background .15s}
+.ab:hover{background:var(--od);color:#fff}
+.auth-msg{font-size:13px;color:var(--txm);margin-top:14px;line-height:1.5}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:.5px solid var(--bd);background:rgba(10,10,10,0.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.brand{display:flex;align-items:center;gap:10px}
+.bm{width:30px;height:30px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:15px;color:#000}
+.bn{font-family:var(--fd);font-weight:700;font-size:14px}
+.bs{font-size:10px;color:var(--txm);font-family:var(--fm)}
+.topnav{display:flex;gap:3px;flex-wrap:wrap}
+.nb{padding:6px 12px;border-radius:6px;border:.5px solid transparent;background:transparent;color:var(--txm);cursor:pointer;font-family:var(--fb);font-size:13px;transition:all .15s;white-space:nowrap}
+.nb:hover{background:var(--s2);color:var(--tx)}
+.nb.active{background:var(--og);border-color:var(--orange);color:var(--orange)}
+.topright{display:flex;align-items:center;gap:10px}
+.topdate{font-family:var(--fm);font-size:11px;color:var(--txm)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--og);border:1px solid var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:12px;color:var(--orange);cursor:pointer}
+.content{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%}
+.section{display:none;animation:fi .2s ease}
+.section.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{background:var(--s1);border:.5px solid var(--bd);border-radius:var(--rl);padding:18px}
+.card-o{border-color:rgba(255,106,0,.25);background:linear-gradient(135deg,var(--og2) 0%,var(--s1) 60%)}
+.ct{font-family:var(--fd);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txm);margin-bottom:12px}
+.ch{font-family:var(--fd);font-weight:700;font-size:19px}
+.b{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--fm)}
+.bo{background:var(--og);color:var(--orange);border:.5px solid rgba(255,106,0,.3)}
+.bg{background:rgba(74,222,128,.1);color:var(--green);border:.5px solid rgba(74,222,128,.3)}
+.ba{background:rgba(251,191,36,.1);color:var(--amber);border:.5px solid rgba(251,191,36,.3)}
+.br{background:rgba(248,113,113,.1);color:var(--red);border:.5px solid rgba(248,113,113,.3)}
+.bb{background:rgba(96,165,250,.1);color:var(--blue);border:.5px solid rgba(96,165,250,.3)}
+.bt{background:rgba(45,212,191,.1);color:var(--teal);border:.5px solid rgba(45,212,191,.3)}
+.bp{background:rgba(167,139,250,.1);color:var(--purple);border:.5px solid rgba(167,139,250,.3)}
+.bd2c{background:var(--s2);color:var(--txm);border:.5px solid var(--bd)}
+.dv{height:.5px;background:var(--bd);margin:14px 0}
+input,select,textarea{background:var(--s2);border:.5px solid var(--bd2);color:var(--tx);border-radius:var(--r);padding:8px 12px;font-family:var(--fb);font-size:13px;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--orange)}
+input::placeholder{color:var(--txd)}
+textarea{resize:vertical}
+select option{background:var(--s2)}
+.btn{padding:8px 16px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--s2);color:var(--tx);cursor:pointer;font-family:var(--fb);font-size:13px;transition:all .15s}
+.btn:hover{background:var(--s3)}
+.btn-o{background:var(--orange);border-color:var(--orange);color:#000;font-weight:600}
+.btn-o:hover{background:var(--od);color:#fff}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--txm)}
+.btn-ghost:hover{background:var(--s2);color:var(--tx);border-color:var(--bd)}
+.pb{height:4px;border-radius:2px;background:var(--s3);overflow:hidden}
+.pf{height:100%;border-radius:2px;background:var(--orange);transition:width .4s ease}
+.pf-g{background:var(--green)}
+.pf-a{background:var(--amber)}
+.ti{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:.5px solid var(--bd)}
+.ti:last-child{border-bottom:none}
+.tc{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--bd2);background:transparent;cursor:pointer;flex-shrink:0;margin-top:1px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.tc.done{background:var(--green);border-color:var(--green)}
+.tc.done::after{content:'✓';font-size:9px;color:#000;font-weight:700}
+.wg{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dc{background:var(--s1);border:.5px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.dc.today{border-color:rgba(255,106,0,.4)}
+.dh{padding:7px 9px;font-family:var(--fd);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:.5px solid var(--bd)}
+.dh.today{color:var(--orange)}
+.de{padding:6px;min-height:60px;display:flex;flex-direction:column;gap:3px}
+.dev{padding:3px 6px;border-radius:4px;font-size:10px;border-left:2px solid var(--orange);background:var(--og2)}
+.dev.wenna{border-color:var(--orange)}
+.dev.myria{border-color:var(--teal);background:rgba(45,212,191,.06)}
+.dev.hexjen{border-color:var(--blue);background:rgba(96,165,250,.06)}
+.dev.perso{border-color:var(--amber);background:rgba(251,191,36,.06)}
+.dev.fixi{border-color:var(--purple);background:rgba(167,139,250,.06)}
+.pt{width:100%;border-collapse:collapse}
+.pt th{text-align:left;font-family:var(--fd);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txm);padding:7px 10px;border-bottom:.5px solid var(--bd)}
+.pt td{padding:10px;border-bottom:.5px solid var(--bd);font-size:13px;vertical-align:middle}
+.pt tr:last-child td{border-bottom:none}
+.pt tr:hover td{background:var(--s2)}
+.rc{background:var(--s2);border:.5px solid var(--bd);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.rt{font-family:var(--fd);font-weight:700;font-size:12px;margin-bottom:3px}
+.rd{font-size:11px;color:var(--txm);line-height:1.5}
+.fs{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:.5px solid var(--bd)}
+.fs:last-child{border-bottom:none}
+.fn{width:24px;height:24px;border-radius:50%;background:var(--og);border:1px solid rgba(255,106,0,.4);color:var(--orange);font-family:var(--fm);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ft{font-weight:500;font-size:13px}
+.fs2{font-size:11px;color:var(--txm);margin-top:1px}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;padding:16px}
+.mo.open{display:flex}
+.mbox{background:var(--s1);border:.5px solid var(--bd2);border-radius:var(--rl);padding:22px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;position:relative}
+.mt{font-family:var(--fd);font-weight:700;font-size:17px;margin-bottom:14px}
+.mc2{position:absolute;top:14px;right:14px}
+.fl{display:block;font-size:11px;color:var(--txm);text-transform:uppercase;letter-spacing:.06em;font-family:var(--fm);margin-bottom:4px}
+.fr{margin-bottom:11px}
+.fr input,.fr select,.fr textarea{width:100%}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.nf{position:fixed;bottom:20px;right:20px;z-index:300;background:var(--s1);border:.5px solid var(--orange);border-radius:var(--r);padding:11px 15px;font-size:13px;max-width:280px;transform:translateY(70px);opacity:0;transition:all .3s}
+.nf.show{transform:translateY(0);opacity:1}
+.chip{padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;border:.5px solid var(--bd2);background:var(--s2);color:var(--txm);transition:all .15s;white-space:nowrap}
+.chip:hover,.chip.active{background:var(--og);border-color:var(--orange);color:var(--orange)}
+.sc{background:var(--s2);border:.5px solid var(--bd);border-radius:var(--rl);padding:14px;transition:border-color .2s}
+.sc:hover{border-color:var(--bd2)}
+.sn{font-family:var(--fd);font-weight:700;font-size:14px;margin-bottom:4px}
+.sd{font-size:12px;color:var(--txm);margin-bottom:9px;line-height:1.5}
+.je{background:var(--s2);border:.5px solid var(--bd);border-radius:var(--rl);padding:16px;margin-bottom:10px}
+.jd{font-family:var(--fm);font-size:11px;color:var(--txm);margin-bottom:10px}
+.jl{font-size:11px;color:var(--txm);font-family:var(--fm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.ic{background:var(--s2);border:.5px solid var(--bd);border-radius:var(--rl);padding:16px;transition:border-color .2s;position:relative}
+.ic:hover{border-color:var(--bd2)}
+.ic.starred{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.03)}
+.ii{width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:10px}
+.it{font-family:var(--fd);font-weight:700;font-size:14px;margin-bottom:4px}
+.rim{display:flex;align-items:center;gap:10px;padding:10px;background:var(--s2);border:.5px solid var(--bd);border-radius:var(--r);margin-bottom:6px}
+.ric{width:32px;height:32px;border-radius:8px;background:var(--og);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.st{font-family:var(--fd);font-weight:800;font-size:22px}
+.ss{font-size:12px;color:var(--txm);margin-top:2px}
+.mvb{background:var(--s2);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.mvd{width:10px;height:10px;border-radius:50%;background:var(--s3);cursor:pointer;transition:background .1s}
+.mvd.lit{background:var(--orange)}
+.tb2{display:flex;gap:9px;align-items:stretch;margin-bottom:5px}
+.tl{font-family:var(--fm);font-size:10px;color:var(--txd);width:36px;text-align:right;padding-top:7px;flex-shrink:0}
+.te{flex:1;padding:6px 11px;border-radius:6px;border-left:2px solid var(--orange);background:var(--og2);font-size:12px}
+.te.myria{border-color:var(--teal);background:rgba(45,212,191,.06)}
+.te.hexjen{border-color:var(--blue);background:rgba(96,165,250,.06)}
+.te.perso{border-color:var(--amber);background:rgba(251,191,36,.06)}
+.loader{display:flex;align-items:center;justify-content:center;padding:32px;color:var(--txm);font-size:13px;font-family:var(--fm)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--s3);border-top-color:var(--orange);border-radius:50%;animation:sp .6s linear infinite;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:28px;color:var(--txd);font-size:13px}
+.ua{border:1.5px dashed var(--bd2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:border-color .15s;color:var(--txm);font-size:13px}
+.ua:hover,.ua.drag{border-color:var(--orange);color:var(--tx)}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+@media(max-width:900px){.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}.wg{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- AUTH -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">S</div>
+    <div class="auth-title">Sanemi OS</div>
+    <div class="auth-sub">Centre de commandement personnel</div>
+    <div class="fr" style="text-align:left">
+      <label class="fl" style="display:block;margin-bottom:4px">Email</label>
+      <input type="email" id="authEmail" class="ai" placeholder="hanamisama74@gmail.com" style="margin-bottom:0">
+    </div>
+    <div class="fr" style="text-align:left;margin-top:10px;position:relative">
+      <label class="fl" style="display:block;margin-bottom:4px">Mot de passe</label>
+      <input type="password" id="authPwd" class="ai" placeholder="••••••••••" style="margin-bottom:0;padding-right:44px" onkeydown="if(event.key==='Enter')signIn()">
+      <button onclick="togglePwd()" style="position:absolute;right:12px;bottom:10px;background:none;border:none;cursor:pointer;color:var(--txm);font-size:16px" id="eyeBtn">👁</button>
+    </div>
+    <div id="authMsg" style="font-size:12px;color:var(--red);margin:8px 0;min-height:18px;text-align:left"></div>
+    <button class="ab" id="signInBtn" onclick="signIn()">Accéder au dashboard →</button>
+    <div style="margin-top:16px;font-size:11px;color:var(--txd)">Accès privé · Sanemi OS v2</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+<header class="topbar">
+  <div class="brand"><div class="bm">S</div><div><div class="bn">Sanemi OS</div><div class="bs">Centre de commandement</div></div></div>
+  <nav class="topnav">
+    <button class="nb active" onclick="showSec('planning',this)">Planning</button>
+    <button class="nb" onclick="showSec('projets',this)">Projets</button>
+    <button class="nb" onclick="showSec('finance',this)">Finance</button>
+    <button class="nb" onclick="showSec('idees',this)">Idées</button>
+    <button class="nb" onclick="showSec('journal',this)">Journal</button>
+    <button class="nb" onclick="showSec('sorties',this)">Sorties</button>
+    <button class="nb" onclick="showSec('rappels',this)">Rappels</button>
+  </nav>
+  <div class="topright">
+    <div class="topdate" id="topDate"></div>
+    <div class="avatar" id="av" onclick="signOut()" title="Déconnexion">S</div>
+  </div>
+</header>
+<main class="content">
+
+<!-- PLANNING -->
+<section class="section active" id="planning">
+  <div class="sh">
+    <div><div class="st">Planning Semaine</div><div class="ss">Semaine <span id="wkNum"></span> · Mode : <span id="modeLabel">Alterné</span></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="b ba">🔥 <span id="streakVal">0</span>j streak</span>
+      <button class="btn btn-sm" onclick="openM('mTask')">+ Tâche</button>
+    </div>
+  </div>
+  <div class="mvb">
+    <div><div style="font-size:13px;font-weight:500">Niveau d'énergie</div><div style="font-size:11px;color:var(--txm)">Adapte tes blocs de travail</div></div>
+    <div>
+      <div style="font-size:11px;color:var(--txm);text-align:right;margin-bottom:3px">Mode : <strong id="motive-lbl" style="color:var(--orange)">Équilibré</strong></div>
+      <div style="display:flex;gap:4px" id="mvRow"><div class="mvd lit" onclick="setMv(1)"></div><div class="mvd lit" onclick="setMv(2)"></div><div class="mvd lit" onclick="setMv(3)"></div><div class="mvd" onclick="setMv(4)"></div><div class="mvd" onclick="setMv(5)"></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px"><div class="ct">Cette semaine</div><div class="wg" id="weekGrid"></div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Tâches du jour — <span id="todayLbl"></span></div>
+      <div id="todayTasks"><div class="loader"><span class="spin"></span>Chargement...</div></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <input type="text" id="qTask" placeholder="Tâche rapide..." style="flex:1" onkeydown="if(event.key==='Enter')addQTask()">
+        <button class="btn btn-sm btn-o" onclick="addQTask()">+</button>
+      </div>
+    </div>
+    <div class="card"><div class="ct">Blocs suggérés</div><div id="timeBlocks"></div></div>
+  </div>
+</section>
+
+<!-- PROJETS -->
+<section class="section" id="projets">
+  <div class="sh"><div><div class="st">Projets</div><div class="ss">Priorités & objectifs</div></div><button class="btn btn-sm btn-o" onclick="openM('mObj')">+ Objectif</button></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="ct">Tableau de priorités</div>
+    <div id="prioLoader" class="loader"><span class="spin"></span>Chargement...</div>
+    <table class="pt" id="prioTable" style="display:none"><thead><tr><th>#</th><th>Projet</th><th>Focus</th><th>Urgence</th><th>Avancement</th><th>Statut</th></tr></thead><tbody id="prioBody"></tbody></table>
+  </div>
+  <div class="g2" id="projCards"></div>
+</section>
+
+<!-- FINANCE -->
+<section class="section" id="finance">
+  <div class="sh"><div><div class="st">Finance</div><div class="ss">MAD · Casablanca</div></div><div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="openM('mRev')">+ Revenu</button><button class="btn btn-sm" onclick="openM('mDep')">+ Dépense</button></div></div>
+  <div class="g4" style="margin-bottom:14px">
+    <div class="card card-o"><div class="ct">Revenus MAD</div><div style="font-family:var(--fd);font-weight:700;font-size:24px;color:var(--orange)" id="totRev">0 MAD</div></div>
+    <div class="card"><div class="ct">Dépenses</div><div style="font-family:var(--fd);font-weight:700;font-size:24px" id="totDep">0 MAD</div></div>
+    <div class="card"><div class="ct">Épargne (15%)</div><div style="font-family:var(--fd);font-weight:700;font-size:24px;color:var(--green)" id="totEp">0 MAD</div></div>
+    <div class="card"><div class="ct">Disponible</div><div style="font-family:var(--fd);font-weight:700;font-size:24px;color:var(--teal)" id="totDis">0 MAD</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">Règles 50/30/15/5</div>
+      <div class="rc"><div class="rt">🏠 Besoins — 50%</div><div class="rd">Loyer, nourriture, transport, téléphone</div><div class="pb" style="margin-top:7px"><div class="pf pf-g" id="b-bes" style="width:0%"></div></div><div style="font-size:11px;color:var(--txm);margin-top:3px" id="v-bes">— MAD</div></div>
+      <div class="rc"><div class="rt">📈 Projets — 30%</div><div class="rd">WennaShop, Myria, Hexjen, outils</div><div class="pb" style="margin-top:7px"><div class="pf" id="b-proj" style="width:0%"></div></div><div style="font-size:11px;color:var(--txm);margin-top:3px" id="v-proj">— MAD</div></div>
+      <div class="rc"><div class="rt">💰 Épargne — 15%</div><div class="rd">Fonds de secours · 3 mois minimum</div><div class="pb" style="margin-top:7px"><div class="pf pf-a" id="b-ep" style="width:0%"></div></div><div style="font-size:11px;color:var(--txm);margin-top:3px" id="v-ep">— MAD</div></div>
+      <div class="rc"><div class="rt">🎯 Liberté — 5%</div><div class="rd">Sorties, plaisirs, impulsions maîtrisées</div><div class="pb" style="margin-top:7px"><div class="pf" style="background:var(--teal)" id="b-lib"></div></div><div style="font-size:11px;color:var(--txm);margin-top:3px" id="v-lib">— MAD</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="ct">Entrée imprévue — protocole</div>
+        <div class="fs"><div class="fn">1</div><div><div class="ft">Stop — 48h sans dépenser</div><div class="fs2">Laisser l'émotion passer</div></div></div>
+        <div class="fs"><div class="fn">2</div><div><div class="ft">Appliquer la règle 50/30/15/5</div><div class="fs2">Calculer à gauche</div></div></div>
+        <div class="fs"><div class="fn">3</div><div><div class="ft">Épargne d'abord — virement immédiat</div><div class="fs2">Hors de portée</div></div></div>
+        <div class="fs"><div class="fn">4</div><div><div class="ft">1 seul investissement projet</div><div class="fs2">WennaShop → Myria → Hexjen</div></div></div>
+      </div>
+      <div class="card"><div class="ct">Transactions récentes</div><div id="txLog"><div class="loader"><span class="spin"></span>Chargement...</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- IDÉES -->
+<section class="section" id="idees">
+  <div class="sh"><div><div class="st">Idées & Inspirations</div><div class="ss">Capture tout, trie après</div></div><button class="btn btn-sm btn-o" onclick="openM('mIdea')">+ Idée</button></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="ideaFilters">
+    <button class="chip active" onclick="filterI('all',this)">Toutes</button>
+    <button class="chip" onclick="filterI('wenna',this)">WennaShop</button>
+    <button class="chip" onclick="filterI('myria',this)">Myria</button>
+    <button class="chip" onclick="filterI('hexjen',this)">Hexjen</button>
+    <button class="chip" onclick="filterI('fixi',this)">Fixi</button>
+    <button class="chip" onclick="filterI('general',this)">Général</button>
+    <button class="chip" onclick="filterI('starred',this)">⭐ Favorites</button>
+  </div>
+  <div id="ideasLoader" class="loader"><span class="spin"></span>Chargement...</div>
+  <div class="g3" id="ideasGrid" style="display:none"></div>
+</section>
+
+<!-- JOURNAL -->
+<section class="section" id="journal">
+  <div class="sh"><div><div class="st">Journal de Bord</div><div class="ss">Bilan quotidien structuré</div></div><button class="btn btn-sm btn-o" onclick="openM('mJournal')">+ Entrée du jour</button></div>
+  <div id="journalLoader" class="loader"><span class="spin"></span>Chargement...</div>
+  <div id="journalList"></div>
+</section>
+
+<!-- SORTIES -->
+<section class="section" id="sorties">
+  <div class="sh"><div><div class="st">Agent Sorties</div><div class="ss">Casablanca · humeur & budget</div></div></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="ct">Comment tu te sens ?</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="moodSel">
+      <div class="chip" onclick="selMood(this,'calme')">🧘 Calme</div>
+      <div class="chip" onclick="selMood(this,'social')">🤝 Social</div>
+      <div class="chip" onclick="selMood(this,'creatif')">🎨 Créatif</div>
+      <div class="chip" onclick="selMood(this,'sport')">⚡ Sport</div>
+      <div class="chip" onclick="selMood(this,'explorer')">🗺 Explorer</div>
+      <div class="chip" onclick="selMood(this,'manger')">🍜 Manger</div>
+    </div>
+    <div class="ct">Budget disponible</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="budgetSel">
+      <div class="chip active" onclick="selBud(this,0)">0 MAD — Gratuit</div>
+      <div class="chip" onclick="selBud(this,1)">&lt; 50 MAD</div>
+      <div class="chip" onclick="selBud(this,2)">50–150 MAD</div>
+      <div class="chip" onclick="selBud(this,3)">150+ MAD</div>
+    </div>
+    <button class="btn btn-o" style="width:100%" onclick="genSorties()">Trouver des sorties ✦</button>
+  </div>
+  <div id="sortieRes"></div>
+  <div class="card" style="margin-top:14px"><div class="ct">Ton profil découvert</div><div id="prefProfile"><div style="font-size:12px;color:var(--txm)">Marque des lieux ♡ pour construire ton profil</div></div></div>
+</section>
+
+<!-- RAPPELS -->
+<section class="section" id="rappels">
+  <div class="sh"><div><div class="st">Rappels & Notifications</div><div class="ss">Email automatique à la date prévue</div></div><button class="btn btn-sm btn-o" onclick="openM('mRemind')">+ Rappel</button></div>
+  <div id="remindLoader" class="loader"><span class="spin"></span>Chargement...</div>
+  <div id="remindList"></div>
+</section>
+
+</main>
+</div><!-- /mainApp -->
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="mo" id="mTask"><div class="mbox">
+  <div class="mt">Nouvelle tâche</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mTask')">✕</button>
+  <div class="fr"><label class="fl">Titre</label><input type="text" id="tTitle" placeholder="Ex: Finaliser checkout WennaShop"></div>
+  <div class="fr fr2">
+    <div><label class="fl">Projet</label><select id="tProj"><option value="wenna">WennaShop</option><option value="myria">Myria</option><option value="hexjen">Hexjen</option><option value="fixi">Fixi</option><option value="perso">Personnel</option></select></div>
+    <div><label class="fl">Priorité</label><select id="tPrio"><option value="haute">Haute</option><option value="moyenne">Moyenne</option><option value="basse">Basse</option></select></div>
+  </div>
+  <div class="fr fr2">
+    <div><label class="fl">Jour</label><select id="tDay"><option value="0">Lundi</option><option value="1">Mardi</option><option value="2">Mercredi</option><option value="3">Jeudi</option><option value="4">Vendredi</option><option value="5">Samedi</option><option value="6">Dimanche</option></select></div>
+    <div><label class="fl">Durée (h)</label><input type="number" id="tDur" value="1" min="0.5" max="8" step="0.5"></div>
+  </div>
+  <button class="btn btn-o" style="width:100%" onclick="saveTask()">Ajouter</button>
+</div></div>
+
+<div class="mo" id="mObj"><div class="mbox">
+  <div class="mt">Nouvel objectif</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mObj')">✕</button>
+  <div class="fr"><label class="fl">Projet</label><select id="oProj"><option value="wenna">WennaShop</option><option value="myria">Myria</option><option value="hexjen">Hexjen</option><option value="fixi">Fixi</option></select></div>
+  <div class="fr"><label class="fl">Objectif</label><input type="text" id="oTitle" placeholder="Ex: Lancer checkout CinetPay"></div>
+  <div class="fr fr2">
+    <div><label class="fl">Deadline</label><input type="date" id="oDeadline"></div>
+    <div><label class="fl">Urgence</label><select id="oUrg"><option value="critique">🔴 Critique</option><option value="haute">🟠 Haute</option><option value="normale">🟡 Normale</option></select></div>
+  </div>
+  <div class="fr"><label class="fl">Avancement %</label><input type="number" id="oProgress" value="0" min="0" max="100"></div>
+  <div class="fr"><label class="fl">Notes</label><textarea id="oNotes" rows="2" placeholder="Contexte, blocages..."></textarea></div>
+  <button class="btn btn-o" style="width:100%" onclick="saveObj()">Ajouter</button>
+</div></div>
+
+<div class="mo" id="mRev"><div class="mbox">
+  <div class="mt">Enregistrer un revenu</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mRev')">✕</button>
+  <div class="fr"><label class="fl">Source</label><input type="text" id="rSrc" placeholder="Ex: Hexjen — client website"></div>
+  <div class="fr fr2">
+    <div><label class="fl">Montant (MAD)</label><input type="number" id="rAmt" placeholder="3500"></div>
+    <div><label class="fl">Type</label><select id="rType"><option value="prevu">Prévu</option><option value="imprévu">Imprévu</option></select></div>
+  </div>
+  <button class="btn btn-o" style="width:100%" onclick="saveRevenu()">Enregistrer & Répartir</button>
+</div></div>
+
+<div class="mo" id="mDep"><div class="mbox">
+  <div class="mt">Enregistrer une dépense</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mDep')">✕</button>
+  <div class="fr"><label class="fl">Libellé</label><input type="text" id="dLabel" placeholder="Ex: Hébergement Netlify"></div>
+  <div class="fr fr2">
+    <div><label class="fl">Montant (MAD)</label><input type="number" id="dAmt" placeholder="120"></div>
+    <div><label class="fl">Catégorie</label><select id="dCat"><option value="besoins">Besoins</option><option value="projets">Projets</option><option value="liberte">Liberté</option></select></div>
+  </div>
+  <button class="btn btn-o" style="width:100%" onclick="saveDepense()">Enregistrer</button>
+</div></div>
+
+<div class="mo" id="mIdea"><div class="mbox">
+  <div class="mt">Capturer une idée</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mIdea')">✕</button>
+  <div class="fr"><label class="fl">Titre</label><input type="text" id="iTitle" placeholder="L'idée en une phrase..."></div>
+  <div class="fr"><label class="fl">Détail</label><textarea id="iContent" rows="3" placeholder="Développe, contexte, potentiel..."></textarea></div>
+  <div class="fr fr2">
+    <div><label class="fl">Projet</label><select id="iProj"><option value="general">Général</option><option value="wenna">WennaShop</option><option value="myria">Myria</option><option value="hexjen">Hexjen</option><option value="fixi">Fixi</option></select></div>
+    <div><label class="fl">Statut</label><select id="iStatus"><option value="nouvelle">Nouvelle</option><option value="en_cours">En cours</option><option value="archivée">Archivée</option></select></div>
+  </div>
+  <div class="fr"><label class="fl">Tags (virgule)</label><input type="text" id="iTags" placeholder="UI, mobile, revenu..."></div>
+  <div class="fr"><label class="fl">Image (optionnel)</label>
+    <div class="ua" id="uploadArea" onclick="document.getElementById('iImg').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="dropFile(event)">Clique ou glisse une image ici</div>
+    <input type="file" id="iImg" accept="image/*" style="display:none" onchange="prevImg(event)">
+  </div>
+  <button class="btn btn-o" style="width:100%" onclick="saveIdea()">Capturer ✦</button>
+</div></div>
+
+<div class="mo" id="mJournal"><div class="mbox">
+  <div class="mt">Bilan du jour</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mJournal')">✕</button>
+  <div class="fr">
+    <label class="fl">Humeur (1=épuisé · 5=au top)</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="jHumRow">
+      <button class="chip" onclick="setJH(1,this)">😩 1</button>
+      <button class="chip" onclick="setJH(2,this)">😕 2</button>
+      <button class="chip" onclick="setJH(3,this)">😐 3</button>
+      <button class="chip" onclick="setJH(4,this)">🙂 4</button>
+      <button class="chip" onclick="setJH(5,this)">🔥 5</button>
+    </div>
+  </div>
+  <div class="fr"><label class="fl">Réalisations du jour</label><textarea id="jReal" rows="3" placeholder="Ce que tu as accompli..."></textarea></div>
+  <div class="fr"><label class="fl">Blocages / frustrations</label><textarea id="jBlock" rows="2" placeholder="Ce qui a coincé..."></textarea></div>
+  <div class="fr"><label class="fl">Idée du jour</label><input type="text" id="jIdee" placeholder="Une pensée qui a émergé..."></div>
+  <div class="fr"><label class="fl">Note libre</label><textarea id="jNote" rows="2" placeholder="Ressenti, observations..."></textarea></div>
+  <div class="fr">
+    <label class="fl">Énergie prévue demain</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="jEnRow">
+      <button class="chip" onclick="setJE(1,this)">1</button>
+      <button class="chip" onclick="setJE(2,this)">2</button>
+      <button class="chip" onclick="setJE(3,this)">3</button>
+      <button class="chip" onclick="setJE(4,this)">4</button>
+      <button class="chip" onclick="setJE(5,this)">5</button>
+    </div>
+  </div>
+  <button class="btn btn-o" style="width:100%;margin-top:10px" onclick="saveJournal()">Enregistrer le bilan</button>
+</div></div>
+
+<div class="mo" id="mRemind"><div class="mbox">
+  <div class="mt">Nouveau Rappel</div><button class="btn btn-ghost btn-sm mc2" onclick="closeM('mRemind')">✕</button>
+  <div class="fr"><label class="fl">Titre</label><input type="text" id="remTitle" placeholder="Ex: Deadline WennaShop checkout"></div>
+  <div class="fr"><label class="fl">Message (email)</label><textarea id="remMsg" rows="2" placeholder="Détail..."></textarea></div>
+  <div class="fr fr2">
+    <div><label class="fl">Date & heure</label><input type="datetime-local" id="remDate"></div>
+    <div><label class="fl">Projet</label><select id="remProj"><option value="wenna">WennaShop</option><option value="myria">Myria</option><option value="hexjen">Hexjen</option><option value="fixi">Fixi</option><option value="perso">Personnel</option></select></div>
+  </div>
+  <button class="btn btn-o" style="width:100%" onclick="saveRemind()">Programmer</button>
+</div></div>
+
+<div class="nf" id="notif"></div>
+
+<script>
+// ══ CONFIG SUPABASE ══
+// Remplace avec les credentials de ton NOUVEAU projet Supabase
+const SUPA_URL = 'https://gjtmwjtwflbjxvniqvku.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqdG13anR3Zmxianh2bmlxdmt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwMTQwNzAsImV4cCI6MjA4NTU5MDA3MH0.vTMqQdLnWqnET90j2fbaWJJdHtQpnnmI8BtoCvv_6z0';
+
+let sb = null, user = null, currentUser = null, allTasks = [], allIdeas = [], ideaImg = null, motivation = 3, jH = 3, jE = 3, curMood = null, curBudget = 0;
+
+// ══ INIT ══
+document.addEventListener('DOMContentLoaded', async () => {
+  sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+  setTopDate();
+  // session vérifiée via sb.auth.getSession() ci-dessus
+});
+
+
+
+function boot() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('av').textContent = 'S';
+  loadAll();
+}
+
+
+
+// ══ DATE ══
+function setTopDate() {
+  const now = new Date();
+  document.getElementById('topDate').textContent = now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('todayLbl').textContent = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'][dow()];
+  document.getElementById('wkNum').textContent = wkn(now);
+}
+function dow(){ return (new Date().getDay()+6)%7; }
+function wkn(d){ const s=new Date(d.getFullYear(),0,1); return Math.ceil((((d-s)/86400000)+s.getDay()+1)/7); }
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+
+// ══ LOAD ALL ══
+async function loadAll() {
+  setTopDate(); buildWeek(); renderTimeBlocks();
+  await Promise.all([loadTasks(), loadObjs(), loadTx(), loadIdeas(), loadJournal(), loadReminders()]);
+}
+
+// ══ TASKS ══
+async function loadTasks() {
+  if (!sb||!user) { renderTodayTasks([]); return; }
+  const {data} = await sb.from('sanemi_tasks').select('*');
+  allTasks = data||[];
+  buildWeek();
+  renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
+}
+function buildWeek() {
+  const DAYS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'], MODES=['Dev','Admin','Dev','Créa','Dev','Bilan','Repos'], today=dow();
+  const g = document.getElementById('weekGrid'); g.innerHTML='';
+  DAYS.forEach((d,i)=>{
+    const tasks=allTasks.filter(t=>t.day_of_week===i), isT=i===today;
+    const col=document.createElement('div'); col.className='dc'+(isT?' today':'');
+    col.innerHTML=`<div class="dh${isT?' today':''}">${d}<span style="font-weight:400;font-size:9px;color:var(--txd);display:block">${MODES[i]}</span></div><div class="de" id="de${i}"></div>`;
+    g.appendChild(col);
+    const de=col.querySelector('#de'+i);
+    if(!tasks.length) de.innerHTML='<div style="font-size:10px;color:var(--txd)">—</div>';
+    tasks.forEach(t=>{ const e=document.createElement('div'); e.className=`dev ${t.project||'wenna'}`; e.textContent=t.title.substring(0,18)+(t.title.length>18?'…':''); de.appendChild(e); });
+  });
+}
+function renderTodayTasks(tasks) {
+  const c=document.getElementById('todayTasks');
+  if(!tasks.length){c.innerHTML='<div class="empty">Aucune tâche aujourd\'hui</div>';return;}
+  c.innerHTML=tasks.map(t=>`<div class="ti"><div class="tc${t.done?' done':''}" onclick="toggleT('${t.id}',${!t.done})"></div><div style="flex:1"><div style="font-size:13px${t.done?';text-decoration:line-through;color:var(--txm)':''}">${t.title}</div><div style="display:flex;gap:4px;margin-top:2px"><span class="b ${pColor(t.project)}" style="font-size:10px">${pName(t.project)}</span><span style="font-size:10px;color:var(--txd)">${t.duration||1}h</span></div></div><button class="btn btn-ghost btn-sm" onclick="delT('${t.id}')" style="padding:2px 6px;color:var(--txd)">✕</button></div>`).join('');
+}
+async function toggleT(id, done) {
+  if(sb) await sb.from('sanemi_tasks').update({done}).eq('id',id);
+  const t=allTasks.find(x=>x.id===id); if(t) t.done=done;
+  renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
+}
+async function delT(id) {
+  if(sb) await sb.from('sanemi_tasks').delete().eq('id',id);
+  allTasks=allTasks.filter(x=>x.id!==id); buildWeek(); renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
+}
+async function addQTask() {
+  const v=document.getElementById('qTask').value.trim(); if(!v) return;
+  const t={title:v,project:'wenna',priority:'moyenne',day_of_week:dow(),duration:1,done:false,week_number:wkn(new Date()),year:new Date().getFullYear()};
+  if(sb){const {data}=await sb.from('sanemi_tasks').insert({...t, user_id: currentUser?.id}).select().single(); if(data) allTasks.push(data);}
+  else allTasks.push({...t,id:Date.now().toString()});
+  document.getElementById('qTask').value=''; buildWeek(); renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
+}
+async function saveTask() {
+  const title=document.getElementById('tTitle').value.trim(); if(!title) return;
+  const t={title,project:document.getElementById('tProj').value,priority:document.getElementById('tPrio').value,day_of_week:parseInt(document.getElementById('tDay').value),duration:parseFloat(document.getElementById('tDur').value),done:false,week_number:wkn(new Date()),year:new Date().getFullYear()};
+  if(sb){const {data}=await sb.from('sanemi_tasks').insert({...t, user_id: currentUser?.id}).select().single(); if(data) allTasks.push(data);}
+  else allTasks.push({...t,id:Date.now().toString()});
+  buildWeek(); renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
+  closeM('mTask'); document.getElementById('tTitle').value=''; notify('Tâche ajoutée ✓');
+}
+
+// ══ OBJECTIVES ══
+const BASE_PROJS=[
+  {key:'wenna',name:'WennaShop',focus:'Checkout · Tracking · Paiements',urg:'critique',prog:62,stat:'En cours'},
+  {key:'myria',name:'Myria Parfumerie',focus:'Formulaire · Livraison Libreville',urg:'haute',prog:35,stat:'En cours'},
+  {key:'hexjen',name:'Hexjen Conceptions',focus:'Clients · Automatisation n8n',urg:'normale',prog:70,stat:'Actif'},
+  {key:'fixi',name:'Fixi',focus:'Navigation RN · Screens',urg:'normale',prog:25,stat:'Pause'},
+];
+async function loadObjs() {
+  let custom=[];
+  const {data:objData, error:objErr}=await sb.from('sanemi_objectives').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false}); if(!objErr) custom=objData||[];
+  renderPrio(custom); renderProjCards(custom);
+}
+function renderPrio(custom) {
+  document.getElementById('prioLoader').style.display='none'; document.getElementById('prioTable').style.display='table';
+  const uc={critique:'br',haute:'bo',normale:'ba'};
+  const rows=BASE_PROJS.map((p,i)=>`<tr><td><span style="font-family:var(--fm);color:var(--txm)">#${i+1}</span></td><td><strong style="font-family:var(--fd)">${p.name}</strong></td><td style="color:var(--txm);font-size:12px">${p.focus}</td><td><span class="b ${uc[p.urg]||'bd2c'}">${p.urg}</span></td><td style="min-width:90px"><div class="pb" style="margin-bottom:2px"><div class="pf" style="width:${p.prog}%"></div></div><span style="font-size:11px;color:var(--txm)">${p.prog}%</span></td><td><span class="b ${p.stat==='Pause'?'bd2c':'bg'}">${p.stat}</span></td></tr>`).join('');
+  const crows=custom.map(o=>`<tr><td><span style="font-family:var(--fm);color:var(--txd)">+</span></td><td>${pName(o.project)}</td><td style="color:var(--txm);font-size:12px">${o.title}</td><td><span class="b ${uc[o.urgence]||'bd2c'}">${o.urgence}</span></td><td style="min-width:90px"><div class="pb" style="margin-bottom:2px"><div class="pf" style="width:${o.progress}%"></div></div><span style="font-size:11px;color:var(--txm)">${o.progress}%</span></td><td><span class="b bb">${o.deadline||'—'}</span></td></tr>`).join('');
+  document.getElementById('prioBody').innerHTML=rows+crows;
+}
+function renderProjCards(custom) {
+  document.getElementById('projCards').innerHTML=BASE_PROJS.map(p=>{
+    const myO=custom.filter(o=>o.project===p.key), myT=allTasks.filter(t=>t.project===p.key);
+    return `<div class="card${p.key==='wenna'?' card-o':''}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="ch">${p.name}</div><span class="b ${p.urg==='critique'?'br':p.urg==='haute'?'bo':'ba'}">${p.urg}</span></div><div class="pb" style="height:5px;margin-bottom:6px"><div class="pf" style="width:${p.prog}%"></div></div><div style="font-size:11px;color:var(--txm);margin-bottom:10px">${p.prog}% · ${p.focus}</div><div class="dv"></div>${myO.map(o=>`<div style="font-size:12px;padding:3px 0;border-bottom:.5px solid var(--bd)">↳ ${o.title}</div>`).join('')}<div style="font-size:11px;color:var(--txd);margin-top:6px">${myT.length} tâche(s)</div></div>`;
+  }).join('');
+}
+async function saveObj() {
+  const title=document.getElementById('oTitle').value.trim(); if(!title) return;
+  const o={project:document.getElementById('oProj').value,title,deadline:document.getElementById('oDeadline').value||null,urgence:document.getElementById('oUrg').value,progress:parseInt(document.getElementById('oProgress').value)||0,notes:document.getElementById('oNotes').value};
+  if(sb) await sb.from('sanemi_objectives').insert({...o, user_id: currentUser?.id});
+  loadObjs(); closeM('mObj'); notify('Objectif ajouté ✓');
+}
+
+// ══ FINANCE ══
+async function loadTx() {
+  const {data, error}=await sb.from('sanemi_transactions').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false});
+  if(error){console.error('loadTx:',error); renderFin([]); return;}
+  renderFin(data||[]);
+}
+function renderFin(txs) {
+  const rev=txs.filter(t=>t.type==='revenu').reduce((s,t)=>s+Number(t.amount),0);
+  const dep=txs.filter(t=>t.type==='depense').reduce((s,t)=>s+Number(t.amount),0);
+  const ep=Math.round(rev*.15), dis=Math.max(0,rev-dep);
+  document.getElementById('totRev').textContent=rev.toLocaleString('fr-FR')+' MAD';
+  document.getElementById('totDep').textContent=dep.toLocaleString('fr-FR')+' MAD';
+  document.getElementById('totEp').textContent=ep.toLocaleString('fr-FR')+' MAD';
+  document.getElementById('totDis').textContent=dis.toLocaleString('fr-FR')+' MAD';
+  if(rev>0){[['bes',.5],['proj',.3],['ep',.15],['lib',.05]].forEach(([k,p])=>{const v=Math.round(rev*p); document.getElementById('b-'+k).style.width=(p*100)+'%'; document.getElementById('v-'+k).textContent=v.toLocaleString('fr-FR')+' MAD';});}
+  const log=document.getElementById('txLog');
+  if(!txs.length){log.innerHTML='<div class="empty">Aucune transaction</div>';return;}
+  log.innerHTML=txs.slice(0,8).map(t=>`<div class="ti"><div style="flex:1"><div style="font-size:13px">${t.label||t.source||'—'}</div><div style="display:flex;gap:4px;margin-top:2px"><span class="b bd2c" style="font-size:10px">${t.category||t.rev_type||'—'}</span><span style="font-size:10px;color:var(--txd)">${new Date(t.created_at).toLocaleDateString('fr-FR')}</span></div></div><div style="font-family:var(--fm);font-size:13px;color:${t.type==='revenu'?'var(--green)':'var(--red)'};font-weight:500">${t.type==='revenu'?'+':'-'}${Number(t.amount).toLocaleString('fr-FR')} MAD</div></div>`).join('');
+}
+async function saveRevenu() {
+  const amt=parseFloat(document.getElementById('rAmt').value), src=document.getElementById('rSrc').value.trim(); if(!amt||!src) return;
+  const t={type:'revenu',label:src,source:src,amount:amt,rev_type:document.getElementById('rType').value,category:'revenu'};
+  if(sb) await sb.from('sanemi_transactions').insert({...t, user_id: currentUser?.id});
+  loadTx(); closeM('mRev'); document.getElementById('rAmt').value=''; document.getElementById('rSrc').value=''; notify('Revenu enregistré · Répartition calculée ✓');
+}
+async function saveDepense() {
+  const amt=parseFloat(document.getElementById('dAmt').value), lbl=document.getElementById('dLabel').value.trim(); if(!amt||!lbl) return;
+  const t={type:'depense',label:lbl,amount:amt,category:document.getElementById('dCat').value};
+  if(sb) await sb.from('sanemi_transactions').insert({...t, user_id: currentUser?.id});
+  loadTx(); closeM('mDep'); document.getElementById('dAmt').value=''; document.getElementById('dLabel').value=''; notify('Dépense enregistrée ✓');
+}
+
+// ══ IDÉES ══
+async function loadIdeas() {
+  document.getElementById('ideasLoader').style.display='flex'; document.getElementById('ideasGrid').style.display='none';
+  const {data, error}=await sb.from('sanemi_ideas').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false});
+  if(error){console.error('loadIdeas:',error); renderIdeas([]); return;}
+  allIdeas=data||[]; renderIdeas(allIdeas);
+}
+function renderIdeas(ideas) {
+  const loader=document.getElementById('ideasLoader'), grid=document.getElementById('ideasGrid');
+  loader.style.display='none';
+  if(!ideas.length){grid.style.display='block'; grid.innerHTML='<div class="empty">Aucune idée capturée</div>'; return;}
+  grid.style.display='grid';
+  grid.innerHTML=ideas.map(i=>`<div class="ic${i.is_starred?' starred':''}"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">${i.image_url?`<img src="${i.image_url}" class="ii">`:''}</div><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"><div class="it">${i.title}</div><button class="btn btn-ghost btn-sm" onclick="starIdea('${i.id}',${!i.is_starred})" style="padding:2px 6px;color:${i.is_starred?'var(--amber)':'var(--txd)'}">${i.is_starred?'⭐':'☆'}</button></div><div style="font-size:12px;color:var(--txm);line-height:1.5;margin-bottom:8px">${i.content||''}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span class="b ${pColor(i.project)}" style="font-size:10px">${pName(i.project)}</span><span class="b ${i.status==='nouvelle'?'bo':i.status==='en_cours'?'bg':'bd2c'}" style="font-size:10px">${i.status}</span></div><div style="display:flex;flex-wrap:wrap;gap:4px">${(i.tags||[]).map(t=>`<span class="b bd2c" style="font-size:10px">${t}</span>`).join('')}</div><div style="font-size:10px;color:var(--txd);margin-top:6px">${new Date(i.created_at).toLocaleDateString('fr-FR')}</div></div>`).join('');
+}
+async function starIdea(id, val) {
+  if(sb) await sb.from('sanemi_ideas').update({is_starred:val}).eq('id',id);
+  const i=allIdeas.find(x=>x.id===id); if(i) i.is_starred=val; renderIdeas(allIdeas);
+}
+function filterI(proj, el) {
+  document.querySelectorAll('#ideaFilters .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active');
+  if(proj==='all') renderIdeas(allIdeas);
+  else if(proj==='starred') renderIdeas(allIdeas.filter(i=>i.is_starred));
+  else renderIdeas(allIdeas.filter(i=>i.project===proj));
+}
+function prevImg(e) { const f=e.target.files[0]; if(!f) return; ideaImg=f; document.getElementById('uploadArea').innerHTML=`<img src="${URL.createObjectURL(f)}" style="width:100%;height:110px;object-fit:cover;border-radius:8px">`; }
+function dropFile(e) { e.preventDefault(); e.currentTarget.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(!f) return; ideaImg=f; document.getElementById('uploadArea').innerHTML=`<img src="${URL.createObjectURL(f)}" style="width:100%;height:110px;object-fit:cover;border-radius:8px">`; }
+async function saveIdea() {
+  const title=document.getElementById('iTitle').value.trim(); if(!title) return;
+  let imgUrl=null;
+  if(ideaImg&&sb&&currentUser){ const ext=ideaImg.name.split('.').pop(), path=`${currentUser.id}/${Date.now()}.${ext}`; const {data:up}=await sb.storage.from('ideas-images').upload(path,ideaImg); if(up){const {data:ud}=sb.storage.from('ideas-images').getPublicUrl(path); imgUrl=ud?.publicUrl;} }
+  const idea={title,content:document.getElementById('iContent').value,project:document.getElementById('iProj').value,status:document.getElementById('iStatus').value,tags:document.getElementById('iTags').value.split(',').map(t=>t.trim()).filter(Boolean),image_url:imgUrl,is_starred:false};
+  if(sb) await sb.from('sanemi_ideas').insert({...idea, user_id: currentUser?.id});
+  loadIdeas(); closeM('mIdea'); ['iTitle','iContent','iTags'].forEach(id=>document.getElementById(id).value=''); ideaImg=null; document.getElementById('uploadArea').textContent='Clique ou glisse une image ici'; notify('Idée capturée ✓');
+}
+
+// ══ JOURNAL ══
+function setJH(v,el){jH=v; document.querySelectorAll('#jHumRow .chip').forEach((c,i)=>c.classList.toggle('active',i===v-1));}
+function setJE(v,el){jE=v; document.querySelectorAll('#jEnRow .chip').forEach((c,i)=>c.classList.toggle('active',i===v-1));}
+async function loadJournal() {
+  document.getElementById('journalLoader').style.display='flex';
+  const {data, error}=await sb.from('sanemi_journal').select('*').eq('user_id', currentUser?.id).order('date',{ascending:false}).limit(30);
+  if(error){console.error('loadJournal:',error); renderJournal([]); return;}
+  renderJournal(data||[]);
+}
+function renderJournal(entries) {
+  document.getElementById('journalLoader').style.display='none';
+  const c=document.getElementById('journalList');
+  if(!entries.length){c.innerHTML='<div class="empty">Aucune entrée de journal. Commence aujourd\'hui !</div>';return;}
+  const EMOJIS=['','😩','😕','😐','🙂','🔥'];
+  c.innerHTML=entries.map(e=>`<div class="je"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="jd">${new Date(e.date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div><div style="display:flex;gap:6px;align-items:center"><span style="font-size:18px">${EMOJIS[e.humeur]||'😐'}</span><span class="b ${e.humeur>=4?'bg':e.humeur<=2?'br':'ba'}">${e.humeur}/5</span><span class="b bb">demain: ${e.energie_demain}/5</span></div></div>${e.realisations?`<div style="margin-bottom:10px"><div class="jl">✓ Réalisations</div><div style="font-size:13px;line-height:1.6">${e.realisations}</div></div>`:''} ${e.blocages?`<div style="margin-bottom:10px"><div class="jl">⚡ Blocages</div><div style="font-size:13px;color:var(--txm);line-height:1.6">${e.blocages}</div></div>`:''} ${e.idee_du_jour?`<div style="margin-bottom:10px"><div class="jl">💡 Idée</div><div style="font-size:13px;color:var(--amber)">${e.idee_du_jour}</div></div>`:''} ${e.note_libre?`<div><div class="jl">📝 Note libre</div><div style="font-size:13px;color:var(--txm)">${e.note_libre}</div></div>`:''}</div>`).join('');
+}
+async function saveJournal() {
+  const entry={date:todayStr(),humeur:jH,energie_demain:jE,realisations:document.getElementById('jReal').value,blocages:document.getElementById('jBlock').value,idee_du_jour:document.getElementById('jIdee').value,note_libre:document.getElementById('jNote').value};
+  if(sb) await sb.from('sanemi_journal').upsert({...entry, user_id: currentUser?.id},{onConflict:'user_id,date'});
+  loadJournal(); closeM('mJournal'); ['jReal','jBlock','jIdee','jNote'].forEach(id=>document.getElementById(id).value=''); notify('Journal enregistré ✓');
+}
+
+// ══ RAPPELS ══
+async function loadReminders() {
+  document.getElementById('remindLoader').style.display='flex';
+  const {data, error}=await sb.from('sanemi_reminders').select('*').eq('user_id', currentUser?.id).order('remind_at',{ascending:true});
+  if(error){console.error('loadReminders:',error); renderReminders([]); return;}
+  renderReminders(data||[]);
+}
+function renderReminders(rems) {
+  document.getElementById('remindLoader').style.display='none';
+  const c=document.getElementById('remindList');
+  if(!rems.length){c.innerHTML='<div class="empty">Aucun rappel programmé</div>';return;}
+  const now=new Date();
+  c.innerHTML=rems.map(r=>{const d=new Date(r.remind_at), past=d<now; return `<div class="rim${r.sent||past?' rem-sent':''}"><div class="ric">⏰</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${r.title}</div><div style="display:flex;gap:5px;margin-top:3px"><span class="b bd2c" style="font-size:10px">📧 email</span><span class="b ${pColor(r.related_project)}" style="font-size:10px">${pName(r.related_project)}</span><span style="font-size:11px;color:var(--txd)">${d.toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div></div><span class="b ${r.sent||past?'bg':'bo'}">${r.sent?'Envoyé':past?'Passé':'Programmé'}</span></div>`; }).join('');
+}
+async function saveRemind() {
+  const title=document.getElementById('remTitle').value.trim(), dt=document.getElementById('remDate').value; if(!title||!dt) return;
+  const r={title,message:document.getElementById('remMsg').value,remind_at:new Date(dt).toISOString(),channel:'email',related_project:document.getElementById('remProj').value,sent:false};
+  if(sb) await sb.from('sanemi_reminders').insert({...r, user_id: currentUser?.id});
+  loadReminders(); closeM('mRemind'); document.getElementById('remTitle').value=''; document.getElementById('remMsg').value=''; document.getElementById('remDate').value=''; notify('Rappel programmé ✓');
+}
+
+// ══ SORTIES ══
+const SRTDB={calme:{0:[{n:'Corniche Aïn Diab',d:'Marche en bord de mer. Ressourçant, solo ou avec toi-même.',q:'Aïn Diab'},{n:'Forêt de Bouskoura',d:'Marche sous les pins, air pur, silence.',q:'Bouskoura'}],1:[{n:'Café Glacier Maarif',d:'Wifi fiable, thé, ambiance calme. Idéal pour penser.',q:'Maarif'}],2:[{n:'Café du Livre',d:'Coffee shop littéraire, bonne vibe créative.',q:'Gauthier'}]},social:{0:[{n:'Place Mohammed V',d:'Vie casablancaise authentique. Observer, être dans la ville.',q:'Centre'}],1:[{n:'Marché Rahma',d:'Marché local vivant. Prix bas, vraies interactions.',q:'Maarif'}],2:[{n:'Coworking 9h3',d:'Rencontres avec freelances & entrepreneurs Casa.',q:'Racine'}]},creatif:{0:[{n:'Mosquée Hassan II',d:'Architecture monumentale. Inspiration visuelle pure, gratuit.',q:'Centre'},{n:'Galeries Maarif',d:'Galeries d\'art souvent en accès libre.',q:'Maarif'}],1:[{n:'Villa des Arts',d:'Expos temporaires, tarif réduit.',q:'Palmier'}],2:[{n:'Wonderland Casa',d:'Espace créatif, ateliers, café.',q:'Sidi Belyout'}]},sport:{0:[{n:'Running Corniche',d:'3–5km le long de l\'Atlantique. Gratuit, libère la tête.',q:'Aïn Diab'}],1:[{n:'Foot Hay Mohammadi',d:'Match ouvert, contacts simples.',q:'Hay Mohammadi'}]},explorer:{0:[{n:'Ancienne Médina',d:'Ruelles historiques méconnues. Se perdre, observer.',q:'Centre historique'},{n:'Port de Casa',d:'Front de mer industriel. Atmosphère unique.',q:'Port'}],2:[{n:'Marché Central',d:'Hall monumental, ambiance locale intense.',q:'Centre'}]},manger:{0:[{n:'Msemen de quartier',d:'Msemen + thé au coin de rue. Authentique, 10–15 MAD.',q:'Partout'}],1:[{n:'Resto Derb Omar',d:'Tajines, couscous maison à prix d\'ami.',q:'Derb Omar'}],2:[{n:'La Sqala',d:'Cuisine marocaine dans un bastion historique.',q:'Centre historique'}],3:[{n:"Rick's Café",d:"Expérience unique, ambiance années 40, cocktails.",q:'Aïn Diab'}]}};
+function selMood(el,m){document.querySelectorAll('#moodSel .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); curMood=m;}
+function selBud(el,v){document.querySelectorAll('#budgetSel .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); curBudget=v;}
+function genSorties() {
+  if(!curMood){notify('Choisis une humeur !');return;}
+  const pool=SRTDB[curMood]||{}; let res=[];
+  for(let b=0;b<=curBudget;b++) if(pool[b]) res=res.concat(pool[b]);
+  if(!res.length){document.getElementById('sortieRes').innerHTML='<div class="empty">Essaie un autre filtre</div>';return;}
+  document.getElementById('sortieRes').innerHTML=`<div class="g2">${res.map(s=>`<div class="sc"><div style="font-family:var(--fm);font-size:10px;color:var(--txm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">${s.q}</div><div class="sn">${s.n}</div><div class="sd">${s.d}</div><div style="display:flex;justify-content:space-between;align-items:center"><span class="b bg" style="font-size:10px">${curBudget===0?'Gratuit':'Budget OK'}</span><button class="btn btn-ghost btn-sm" onclick="likeSortie('${s.n}')">♡</button></div></div>`).join('')}</div>`;
+}
+async function likeSortie(name) {
+  if(sb&&currentUser){const {data:p}=await sb.from('sanemi_sortie_prefs').select('*').eq('user_id',currentUser.id).limit(1).maybeSingle(); const liked=p?.liked_places||[]; if(!liked.includes(name)){const nl=[...liked,name]; if(p) await sb.from('sanemi_sortie_prefs').update({liked_places:nl,updated_at:new Date().toISOString()}).eq('id',p.id); else await sb.from('sanemi_sortie_prefs').insert({user_id:currentUser.id,liked_places:nl}); renderPref(nl);}else renderPref(liked);}
+  notify('♡ Sauvegardé');
+}
+function renderPref(liked) { document.getElementById('prefProfile').innerHTML=liked.length?`<div style="display:flex;flex-wrap:wrap;gap:6px">${liked.map(l=>`<span class="b bt" style="font-size:11px">${l}</span>`).join('')}</div>`:'<div style="font-size:12px;color:var(--txm)">Marque des lieux ♡</div>'; }
+
+// ══ MOTIVATION / TIME BLOCKS ══
+function setMv(level) {
+  motivation=level; const lbl=['','Repos','Focus léger','Équilibré','En forme','🔥 Full Power'][level];
+  document.getElementById('motive-lbl').textContent=lbl; document.querySelectorAll('.mvd').forEach((d,i)=>d.classList.toggle('lit',i<level)); renderTimeBlocks();
+}
+function renderTimeBlocks() {
+  const bls=motivation<=1?[{t:'10h',l:'Revue messages & emails',p:'perso',d:1},{t:'11h',l:'1 tâche légère WennaShop',p:'wenna',d:1},{t:'14h',l:'Formation / veille',p:'perso',d:1.5}]:motivation<=3?[{t:'09h',l:'Deep work WennaShop',p:'wenna',d:2},{t:'11h',l:'Admin & messages',p:'perso',d:1},{t:'14h',l:'Myria ou Hexjen',p:'myria',d:2},{t:'17h',l:'Revue & planning J+1',p:'perso',d:.5}]:[{t:'08h',l:'Deep work WennaShop',p:'wenna',d:3},{t:'11h',l:'Bugs & tests',p:'wenna',d:1.5},{t:'14h',l:'Myria / Hexjen sprint',p:'myria',d:2.5},{t:'17h',l:'Admin & emails',p:'perso',d:1},{t:'20h',l:'Apprentissage / idées',p:'perso',d:1}];
+  document.getElementById('timeBlocks').innerHTML=bls.map(b=>`<div class="tb2"><div class="tl">${b.t}</div><div class="te ${b.p}"><div style="font-weight:500">${b.l}</div><div style="font-size:10px;color:var(--txm)">${b.d}h · ${pName(b.p)}</div></div></div>`).join('');
+}
+
+// ══ HELPERS ══
+const PN={wenna:'WennaShop',myria:'Myria',hexjen:'Hexjen',fixi:'Fixi',perso:'Perso',general:'Général',admin:'Admin'};
+const PC={wenna:'bo',myria:'bt',hexjen:'bb',fixi:'bp',perso:'ba',general:'bd2c',admin:'bd2c'};
+function pName(k){return PN[k]||k||'—';}
+function pColor(k){return PC[k]||'bd2c';}
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m) m.classList.remove('open');}));
+function showSec(id,btn){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active');}
+function notify(msg){const n=document.getElementById('notif'); n.textContent=msg; n.classList.add('show'); setTimeout(()=>n.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
