@@ -441,9 +441,20 @@ let sb = null, user = null, currentUser = null, allTasks = [], allIdeas = [], id
 
 // ══ INIT ══
 document.addEventListener('DOMContentLoaded', async () => {
+
   sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
   setTopDate();
-  // session vérifiée via sb.auth.getSession() ci-dessus
+
+  // Vérifie session active
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (session?.user) {
+    currentUser = session.user;
+    user = session.user;
+    boot();
+  }
+
 });
 
 
@@ -467,6 +478,60 @@ function setTopDate() {
 function dow(){ return (new Date().getDay()+6)%7; }
 function wkn(d){ const s=new Date(d.getFullYear(),0,1); return Math.ceil((((d-s)/86400000)+s.getDay()+1)/7); }
 function todayStr(){ return new Date().toISOString().split('T')[0]; }
+
+// ══ AUTH ══
+
+async function signIn() {
+
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPwd').value.trim();
+  const msg = document.getElementById('authMsg');
+
+  if (!email || !password) {
+    msg.textContent = 'Remplis email et mot de passe';
+    return;
+  }
+
+  document.getElementById('signInBtn').disabled = true;
+  document.getElementById('signInBtn').textContent = 'Connexion...';
+
+  const { data, error } = await sb.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    msg.textContent = error.message;
+    document.getElementById('signInBtn').disabled = false;
+    document.getElementById('signInBtn').textContent = 'Accéder au dashboard →';
+    return;
+  }
+
+  currentUser = data.user;
+  user = data.user;
+
+  msg.textContent = '';
+
+  boot();
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+function togglePwd() {
+  const input = document.getElementById('authPwd');
+  const eye = document.getElementById('eyeBtn');
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    eye.textContent = '👁';
+  }
+}
 
 // ══ LOAD ALL ══
 async function loadAll() {
@@ -533,9 +598,29 @@ const BASE_PROJS=[
   {key:'fixi',name:'Fixi',focus:'Navigation RN · Screens',urg:'normale',prog:25,stat:'Pause'},
 ];
 async function loadObjs() {
-  let custom=[];
-  const {data:objData, error:objErr}=await sb.from('sanemi_objectives').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false}); if(!objErr) custom=objData||[];
-  renderPrio(custom); renderProjCards(custom);
+
+  if (!sb || !currentUser) {
+    renderPrio([]);
+    renderProjCards([]);
+    return;
+  }
+
+  let custom = [];
+
+  const { data: objData, error: objErr } = await sb
+    .from('sanemi_objectives')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (!objErr) {
+    custom = objData || [];
+  } else {
+    console.error(objErr);
+  }
+
+  renderPrio(custom);
+  renderProjCards(custom);
 }
 function renderPrio(custom) {
   document.getElementById('prioLoader').style.display='none'; document.getElementById('prioTable').style.display='table';
