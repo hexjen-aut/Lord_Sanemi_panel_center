@@ -158,11 +158,19 @@ select option{background:var(--s2)}
   <div class="auth-box">
     <div class="auth-logo">S</div>
     <div class="auth-title">Sanemi OS</div>
-    <div class="auth-sub">Centre de commandement · Connexion sécurisée</div>
-    <input type="email" id="authEmail" class="ai" placeholder="ton@email.com">
-    <button class="ab" onclick="sendMagicLink()">Recevoir un lien magique ✦</button>
-    <div class="auth-msg" id="authMsg"></div>
-    <div style="margin-top:16px;font-size:11px;color:var(--txd)">Un lien de connexion sera envoyé à ton email.<br>Aucun mot de passe requis.</div>
+    <div class="auth-sub">Centre de commandement personnel</div>
+    <div class="fr" style="text-align:left">
+      <label class="fl" style="display:block;margin-bottom:4px">Email</label>
+      <input type="email" id="authEmail" class="ai" placeholder="h******74@gmail.com" style="margin-bottom:0">
+    </div>
+    <div class="fr" style="text-align:left;margin-top:10px;position:relative">
+      <label class="fl" style="display:block;margin-bottom:4px">Mot de passe</label>
+      <input type="password" id="authPwd" class="ai" placeholder="••••••••••" style="margin-bottom:0;padding-right:44px" onkeydown="if(event.key==='Enter')signIn()">
+      <button onclick="togglePwd()" style="position:absolute;right:12px;bottom:10px;background:none;border:none;cursor:pointer;color:var(--txm);font-size:16px" id="eyeBtn">👁</button>
+    </div>
+    <div id="authMsg" style="font-size:12px;color:var(--red);margin:8px 0;min-height:18px;text-align:left"></div>
+    <button class="ab" id="signInBtn" onclick="signIn()">Accéder au dashboard →</button>
+    <div style="margin-top:16px;font-size:11px;color:var(--txd)">Accès privé · Sanemi OS v2</div>
   </div>
 </div>
 
@@ -429,29 +437,16 @@ select option{background:var(--s2)}
 const SUPA_URL = 'https://gjtmwjtwflbjxvniqvku.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqdG13anR3Zmxianh2bmlxdmt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwMTQwNzAsImV4cCI6MjA4NTU5MDA3MH0.vTMqQdLnWqnET90j2fbaWJJdHtQpnnmI8BtoCvv_6z0';
 
-let sb = null, user = null, allTasks = [], allIdeas = [], ideaImg = null, motivation = 3, jH = 3, jE = 3, curMood = null, curBudget = 0;
+let sb = null, user = null, currentUser = null, allTasks = [], allIdeas = [], ideaImg = null, motivation = 3, jH = 3, jE = 3, curMood = null, curBudget = 0;
 
 // ══ INIT ══
 document.addEventListener('DOMContentLoaded', async () => {
   sb = supabase.createClient(SUPA_URL, SUPA_KEY);
   setTopDate();
-  if (localStorage.getItem('sanemi_authed') === '1') {
-    boot();
-  }
-  // sinon affiche l'écran auth
+  // session vérifiée via sb.auth.getSession() ci-dessus
 });
 
-async function sendMagicLink() {
-  const email = document.getElementById('authEmail').value.trim();
-  if (!email) { return; }
-  // Simple email check
-  if (email === 'hanamisama74@gmail.com') {
-    localStorage.setItem('sanemi_authed', '1');
-    boot();
-  } else {
-    document.getElementById('authMsg').innerHTML = '<span style="color:var(--red)">Email non reconnu</span>';
-  }
-}
+
 
 function boot() {
   document.getElementById('authScreen').style.display = 'none';
@@ -459,12 +454,8 @@ function boot() {
   document.getElementById('av').textContent = 'S';
   loadAll();
 }
-function bootDemo() {
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
-  loadAll();
-}
-async function signOut() { localStorage.removeItem('sanemi_authed'); location.reload(); }
+
+
 
 // ══ DATE ══
 function setTopDate() {
@@ -521,14 +512,14 @@ async function delT(id) {
 async function addQTask() {
   const v=document.getElementById('qTask').value.trim(); if(!v) return;
   const t={title:v,project:'wenna',priority:'moyenne',day_of_week:dow(),duration:1,done:false,week_number:wkn(new Date()),year:new Date().getFullYear()};
-  if(sb){const {data}=await sb.from('sanemi_tasks').insert({...t}).select().single(); if(data) allTasks.push(data);}
+  if(sb){const {data}=await sb.from('sanemi_tasks').insert({...t, user_id: currentUser?.id}).select().single(); if(data) allTasks.push(data);}
   else allTasks.push({...t,id:Date.now().toString()});
   document.getElementById('qTask').value=''; buildWeek(); renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
 }
 async function saveTask() {
   const title=document.getElementById('tTitle').value.trim(); if(!title) return;
   const t={title,project:document.getElementById('tProj').value,priority:document.getElementById('tPrio').value,day_of_week:parseInt(document.getElementById('tDay').value),duration:parseFloat(document.getElementById('tDur').value),done:false,week_number:wkn(new Date()),year:new Date().getFullYear()};
-  if(sb){const {data}=await sb.from('sanemi_tasks').insert({...t}).select().single(); if(data) allTasks.push(data);}
+  if(sb){const {data}=await sb.from('sanemi_tasks').insert({...t, user_id: currentUser?.id}).select().single(); if(data) allTasks.push(data);}
   else allTasks.push({...t,id:Date.now().toString()});
   buildWeek(); renderTodayTasks(allTasks.filter(t=>t.day_of_week===dow()));
   closeM('mTask'); document.getElementById('tTitle').value=''; notify('Tâche ajoutée ✓');
@@ -543,7 +534,7 @@ const BASE_PROJS=[
 ];
 async function loadObjs() {
   let custom=[];
-  const {data:objData, error:objErr}=await sb.from('sanemi_objectives').select('*').order('created_at',{ascending:false}); if(!objErr) custom=objData||[];
+  const {data:objData, error:objErr}=await sb.from('sanemi_objectives').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false}); if(!objErr) custom=objData||[];
   renderPrio(custom); renderProjCards(custom);
 }
 function renderPrio(custom) {
@@ -562,13 +553,13 @@ function renderProjCards(custom) {
 async function saveObj() {
   const title=document.getElementById('oTitle').value.trim(); if(!title) return;
   const o={project:document.getElementById('oProj').value,title,deadline:document.getElementById('oDeadline').value||null,urgence:document.getElementById('oUrg').value,progress:parseInt(document.getElementById('oProgress').value)||0,notes:document.getElementById('oNotes').value};
-  if(sb) await sb.from('sanemi_objectives').insert({...o});
+  if(sb) await sb.from('sanemi_objectives').insert({...o, user_id: currentUser?.id});
   loadObjs(); closeM('mObj'); notify('Objectif ajouté ✓');
 }
 
 // ══ FINANCE ══
 async function loadTx() {
-  const {data, error}=await sb.from('sanemi_transactions').select('*').order('created_at',{ascending:false});
+  const {data, error}=await sb.from('sanemi_transactions').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false});
   if(error){console.error('loadTx:',error); renderFin([]); return;}
   renderFin(data||[]);
 }
@@ -588,20 +579,20 @@ function renderFin(txs) {
 async function saveRevenu() {
   const amt=parseFloat(document.getElementById('rAmt').value), src=document.getElementById('rSrc').value.trim(); if(!amt||!src) return;
   const t={type:'revenu',label:src,source:src,amount:amt,rev_type:document.getElementById('rType').value,category:'revenu'};
-  if(sb) await sb.from('sanemi_transactions').insert({...t});
+  if(sb) await sb.from('sanemi_transactions').insert({...t, user_id: currentUser?.id});
   loadTx(); closeM('mRev'); document.getElementById('rAmt').value=''; document.getElementById('rSrc').value=''; notify('Revenu enregistré · Répartition calculée ✓');
 }
 async function saveDepense() {
   const amt=parseFloat(document.getElementById('dAmt').value), lbl=document.getElementById('dLabel').value.trim(); if(!amt||!lbl) return;
   const t={type:'depense',label:lbl,amount:amt,category:document.getElementById('dCat').value};
-  if(sb) await sb.from('sanemi_transactions').insert({...t});
+  if(sb) await sb.from('sanemi_transactions').insert({...t, user_id: currentUser?.id});
   loadTx(); closeM('mDep'); document.getElementById('dAmt').value=''; document.getElementById('dLabel').value=''; notify('Dépense enregistrée ✓');
 }
 
 // ══ IDÉES ══
 async function loadIdeas() {
   document.getElementById('ideasLoader').style.display='flex'; document.getElementById('ideasGrid').style.display='none';
-  const {data, error}=await sb.from('sanemi_ideas').select('*').order('created_at',{ascending:false});
+  const {data, error}=await sb.from('sanemi_ideas').select('*').eq('user_id', currentUser?.id).order('created_at',{ascending:false});
   if(error){console.error('loadIdeas:',error); renderIdeas([]); return;}
   allIdeas=data||[]; renderIdeas(allIdeas);
 }
@@ -627,9 +618,9 @@ function dropFile(e) { e.preventDefault(); e.currentTarget.classList.remove('dra
 async function saveIdea() {
   const title=document.getElementById('iTitle').value.trim(); if(!title) return;
   let imgUrl=null;
-  if(ideaImg&&sb){ const ext=ideaImg.name.split('.').pop(), path=`sanemi/${Date.now()}.${ext}`; const {data:up}=await sb.storage.from('ideas-images').upload(path,ideaImg); if(up){const {data:ud}=sb.storage.from('ideas-images').getPublicUrl(path); imgUrl=ud?.publicUrl;} }
+  if(ideaImg&&sb&&currentUser){ const ext=ideaImg.name.split('.').pop(), path=`${currentUser.id}/${Date.now()}.${ext}`; const {data:up}=await sb.storage.from('ideas-images').upload(path,ideaImg); if(up){const {data:ud}=sb.storage.from('ideas-images').getPublicUrl(path); imgUrl=ud?.publicUrl;} }
   const idea={title,content:document.getElementById('iContent').value,project:document.getElementById('iProj').value,status:document.getElementById('iStatus').value,tags:document.getElementById('iTags').value.split(',').map(t=>t.trim()).filter(Boolean),image_url:imgUrl,is_starred:false};
-  if(sb) await sb.from('sanemi_ideas').insert({...idea});
+  if(sb) await sb.from('sanemi_ideas').insert({...idea, user_id: currentUser?.id});
   loadIdeas(); closeM('mIdea'); ['iTitle','iContent','iTags'].forEach(id=>document.getElementById(id).value=''); ideaImg=null; document.getElementById('uploadArea').textContent='Clique ou glisse une image ici'; notify('Idée capturée ✓');
 }
 
@@ -638,7 +629,7 @@ function setJH(v,el){jH=v; document.querySelectorAll('#jHumRow .chip').forEach((
 function setJE(v,el){jE=v; document.querySelectorAll('#jEnRow .chip').forEach((c,i)=>c.classList.toggle('active',i===v-1));}
 async function loadJournal() {
   document.getElementById('journalLoader').style.display='flex';
-  const {data, error}=await sb.from('sanemi_journal').select('*').order('date',{ascending:false}).limit(30);
+  const {data, error}=await sb.from('sanemi_journal').select('*').eq('user_id', currentUser?.id).order('date',{ascending:false}).limit(30);
   if(error){console.error('loadJournal:',error); renderJournal([]); return;}
   renderJournal(data||[]);
 }
@@ -651,14 +642,14 @@ function renderJournal(entries) {
 }
 async function saveJournal() {
   const entry={date:todayStr(),humeur:jH,energie_demain:jE,realisations:document.getElementById('jReal').value,blocages:document.getElementById('jBlock').value,idee_du_jour:document.getElementById('jIdee').value,note_libre:document.getElementById('jNote').value};
-  if(sb) await sb.from('sanemi_journal').upsert({...entry},{onConflict:'date'});
+  if(sb) await sb.from('sanemi_journal').upsert({...entry, user_id: currentUser?.id},{onConflict:'user_id,date'});
   loadJournal(); closeM('mJournal'); ['jReal','jBlock','jIdee','jNote'].forEach(id=>document.getElementById(id).value=''); notify('Journal enregistré ✓');
 }
 
 // ══ RAPPELS ══
 async function loadReminders() {
   document.getElementById('remindLoader').style.display='flex';
-  const {data, error}=await sb.from('sanemi_reminders').select('*').order('remind_at',{ascending:true});
+  const {data, error}=await sb.from('sanemi_reminders').select('*').eq('user_id', currentUser?.id).order('remind_at',{ascending:true});
   if(error){console.error('loadReminders:',error); renderReminders([]); return;}
   renderReminders(data||[]);
 }
@@ -672,7 +663,7 @@ function renderReminders(rems) {
 async function saveRemind() {
   const title=document.getElementById('remTitle').value.trim(), dt=document.getElementById('remDate').value; if(!title||!dt) return;
   const r={title,message:document.getElementById('remMsg').value,remind_at:new Date(dt).toISOString(),channel:'email',related_project:document.getElementById('remProj').value,sent:false};
-  if(sb) await sb.from('sanemi_reminders').insert({...r});
+  if(sb) await sb.from('sanemi_reminders').insert({...r, user_id: currentUser?.id});
   loadReminders(); closeM('mRemind'); document.getElementById('remTitle').value=''; document.getElementById('remMsg').value=''; document.getElementById('remDate').value=''; notify('Rappel programmé ✓');
 }
 
@@ -688,7 +679,7 @@ function genSorties() {
   document.getElementById('sortieRes').innerHTML=`<div class="g2">${res.map(s=>`<div class="sc"><div style="font-family:var(--fm);font-size:10px;color:var(--txm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">${s.q}</div><div class="sn">${s.n}</div><div class="sd">${s.d}</div><div style="display:flex;justify-content:space-between;align-items:center"><span class="b bg" style="font-size:10px">${curBudget===0?'Gratuit':'Budget OK'}</span><button class="btn btn-ghost btn-sm" onclick="likeSortie('${s.n}')">♡</button></div></div>`).join('')}</div>`;
 }
 async function likeSortie(name) {
-  if(sb){const {data:p}=await sb.from('sanemi_sortie_prefs').select('*').limit(1).single(); const liked=p?.liked_places||[]; if(!liked.includes(name)){const nl=[...liked,name]; await sb.from('sanemi_sortie_prefs').update({liked_places:nl,updated_at:new Date().toISOString()}).eq('id',p.id); renderPref(nl);}else renderPref(liked);}
+  if(sb&&currentUser){const {data:p}=await sb.from('sanemi_sortie_prefs').select('*').eq('user_id',currentUser.id).limit(1).maybeSingle(); const liked=p?.liked_places||[]; if(!liked.includes(name)){const nl=[...liked,name]; if(p) await sb.from('sanemi_sortie_prefs').update({liked_places:nl,updated_at:new Date().toISOString()}).eq('id',p.id); else await sb.from('sanemi_sortie_prefs').insert({user_id:currentUser.id,liked_places:nl}); renderPref(nl);}else renderPref(liked);}
   notify('♡ Sauvegardé');
 }
 function renderPref(liked) { document.getElementById('prefProfile').innerHTML=liked.length?`<div style="display:flex;flex-wrap:wrap;gap:6px">${liked.map(l=>`<span class="b bt" style="font-size:11px">${l}</span>`).join('')}</div>`:'<div style="font-size:12px;color:var(--txm)">Marque des lieux ♡</div>'; }
