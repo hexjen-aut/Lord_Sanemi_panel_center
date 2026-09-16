@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SectionId } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
+import { useReminderNotifications } from "@/hooks/useReminderNotifications";
 import { Sidebar, MobileNav } from "./Sidebar";
 import { PlanningSection } from "@/components/sections/PlanningSection";
 import { ProjectsSection } from "@/components/sections/ProjectsSection";
@@ -24,6 +25,7 @@ const SECTION_TITLES: Record<SectionId, string> = {
 
 export function DashboardApp({ userId }: { userId: string }) {
   const [section, setSection] = useState<SectionId>("planning");
+  const notifications = useReminderNotifications(userId);
   const today = new Date().toLocaleDateString("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -55,7 +57,13 @@ export function DashboardApp({ userId }: { userId: string }) {
           {section === "idees" && <IdeasSection userId={userId} />}
           {section === "journal" && <JournalSection userId={userId} />}
           {section === "sorties" && <OutingsSection userId={userId} />}
-          {section === "rappels" && <RemindersSection userId={userId} />}
+          {section === "rappels" && (
+            <RemindersSection
+              userId={userId}
+              notifPermission={notifications.permission}
+              onEnableNotifs={notifications.requestPermission}
+            />
+          )}
         </main>
       </div>
     </div>
