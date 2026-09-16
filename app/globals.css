@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --color-orange: #ff6a00;
+  --color-orange-dark: #cc5200;
+  --color-black: #0a0a0a;
+  --color-surface-1: #111111;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #242424;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-ink: #f0ede8;
+  --color-ink-muted: #8c8880;
+  --color-ink-dim: #48453f;
+  --color-green: #4ade80;
+  --color-red: #f87171;
+  --color-amber: #fbbf24;
+  --color-blue: #60a5fa;
+  --color-teal: #2dd4bf;
+  --color-purple: #a78bfa;
+}
+
+@theme inline {
+  --color-orange: var(--color-orange);
+  --color-orange-dark: var(--color-orange-dark);
+  --color-black: var(--color-black);
+  --color-surface-1: var(--color-surface-1);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-ink-dim: var(--color-ink-dim);
+  --color-green: var(--color-green);
+  --color-red: var(--color-red);
+  --color-amber: var(--color-amber);
+  --color-blue: var(--color-blue);
+  --color-teal: var(--color-teal);
+  --color-purple: var(--color-purple);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-syne);
+  --font-mono: var(--font-dm-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-black);
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-3);
+  border-radius: 2px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease;
+}
