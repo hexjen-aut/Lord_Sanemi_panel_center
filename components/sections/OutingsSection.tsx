@@ -14,6 +14,8 @@ export function OutingsSection({ userId }: { userId: string }) {
   const [budget, setBudget] = useState(0);
   const [results, setResults] = useState<Outing[] | null>(null);
   const [liked, setLiked] = useState<string[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [aiPowered, setAiPowered] = useState(false);
 
   useEffect(() => {
     supabase
@@ -25,14 +27,40 @@ export function OutingsSection({ userId }: { userId: string }) {
       .then(({ data }: { data: SanemiSortiePref | null }) => setLiked(data?.liked_places ?? []));
   }, [userId]);
 
-  function generate() {
-    if (!mood) return;
-    const pool = OUTINGS_DB[mood] ?? {};
+  function fallbackResults(): Outing[] {
+    const pool = OUTINGS_DB[mood!] ?? {};
     let res: Outing[] = [];
     for (let b = 0; b <= budget; b++) {
       if (pool[b]) res = res.concat(pool[b]);
     }
-    setResults(res);
+    return res;
+  }
+
+  async function generate() {
+    if (!mood) return;
+    setSearching(true);
+    setResults(null);
+    const moodLabel = MOODS.find((m) => m.key === mood)?.label ?? mood;
+    try {
+      const res = await fetch("/api/outings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mood: moodLabel, budgetLabel: BUDGETS[budget] }),
+      });
+      const data = await res.json();
+      if (data.results) {
+        setResults(data.results);
+        setAiPowered(true);
+      } else {
+        setResults(fallbackResults());
+        setAiPowered(false);
+      }
+    } catch {
+      setResults(fallbackResults());
+      setAiPowered(false);
+    } finally {
+      setSearching(false);
+    }
   }
 
   async function likeOuting(name: string) {
@@ -79,33 +107,47 @@ export function OutingsSection({ userId }: { userId: string }) {
             </Chip>
           ))}
         </div>
-        <Button variant="primary" className="w-full" onClick={generate}>
-          Trouver des sorties ✦
+        <Button variant="primary" className="w-full" onClick={generate} disabled={searching}>
+          {searching ? "Recherche en cours..." : "Trouver des sorties ✦"}
         </Button>
       </Card>
 
-      {results && (
-        <div className="mb-4 grid gap-3.5 sm:grid-cols-2">
-          {results.length === 0 ? (
-            <div className="col-span-full py-7 text-center text-sm text-ink-dim">Essaie un autre filtre</div>
-          ) : (
-            results.map((o) => (
-              <div key={o.name} className="rounded-2xl border border-border bg-surface-2 p-4 transition-colors hover:border-border-strong">
-                <div className="mb-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted">{o.area}</div>
-                <div className="mb-1 font-display text-sm font-bold">{o.name}</div>
-                <div className="mb-2.5 text-xs leading-relaxed text-ink-muted">{o.description}</div>
-                <div className="flex items-center justify-between">
-                  <Badge tone="green">{budget === 0 ? "Gratuit" : "Budget OK"}</Badge>
-                  <button
-                    onClick={() => likeOuting(o.name)}
-                    className="cursor-pointer px-1 text-ink-muted hover:text-red"
-                  >
-                    {liked.includes(o.name) ? "♥" : "♡"}
-                  </button>
-                </div>
-              </div>
-            ))
+      {searching && (
+        <div className="mb-4 flex items-center justify-center gap-2 py-8 font-mono text-xs text-ink-muted">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-surface-3 border-t-orange" />
+          L&apos;agent cherche de vrais lieux à Casablanca...
+        </div>
+      )}
+
+      {results && !searching && (
+        <div className="mb-4">
+          {aiPowered && (
+            <div className="mb-2.5">
+              <Badge tone="purple">✦ Recherche IA en direct</Badge>
+            </div>
           )}
+          <div className="grid gap-3.5 sm:grid-cols-2">
+            {results.length === 0 ? (
+              <div className="col-span-full py-7 text-center text-sm text-ink-dim">Essaie un autre filtre</div>
+            ) : (
+              results.map((o) => (
+                <div key={o.name} className="rounded-2xl border border-border bg-surface-2 p-4 transition-colors hover:border-border-strong">
+                  <div className="mb-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted">{o.area}</div>
+                  <div className="mb-1 font-display text-sm font-bold">{o.name}</div>
+                  <div className="mb-2.5 text-xs leading-relaxed text-ink-muted">{o.description}</div>
+                  <div className="flex items-center justify-between">
+                    <Badge tone="green">{budget === 0 ? "Gratuit" : "Budget OK"}</Badge>
+                    <button
+                      onClick={() => likeOuting(o.name)}
+                      className="cursor-pointer px-1 text-ink-muted hover:text-red"
+                    >
+                      {liked.includes(o.name) ? "♥" : "♡"}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
