@@ -73,10 +73,17 @@ export interface SanemiReminder {
   sent: boolean;
 }
 
-export interface SanemiSortiePref {
+export interface SanemiClient {
   id: string;
   user_id: string;
-  liked_places: string[];
+  name: string;
+  contact: string | null;
+  status: "contact" | "devis" | "signe" | "livre" | "perdu";
+  estimated_value: number;
+  next_action: string | null;
+  next_action_date: string | null;
+  notes: string | null;
+  created_at: string;
   updated_at: string;
 }
 
@@ -86,5 +93,5 @@ export type SectionId =
   | "finance"
   | "idees"
   | "journal"
-  | "sorties"
+  | "clients"
   | "rappels";

@@ -10,7 +10,7 @@ import { ProjectsSection } from "@/components/sections/ProjectsSection";
 import { FinanceSection } from "@/components/sections/FinanceSection";
 import { IdeasSection } from "@/components/sections/IdeasSection";
 import { JournalSection } from "@/components/sections/JournalSection";
-import { OutingsSection } from "@/components/sections/OutingsSection";
+import { ClientsSection } from "@/components/sections/ClientsSection";
 import { RemindersSection } from "@/components/sections/RemindersSection";
 
 const SECTION_TITLES: Record<SectionId, string> = {
@@ -19,7 +19,7 @@ const SECTION_TITLES: Record<SectionId, string> = {
   finance: "Finance",
   idees: "Idées",
   journal: "Journal",
-  sorties: "Sorties",
+  clients: "Clients",
   rappels: "Rappels",
 };
 
@@ -56,7 +56,7 @@ export function DashboardApp({ userId }: { userId: string }) {
           {section === "finance" && <FinanceSection userId={userId} />}
           {section === "idees" && <IdeasSection userId={userId} />}
           {section === "journal" && <JournalSection userId={userId} />}
-          {section === "sorties" && <OutingsSection userId={userId} />}
+          {section === "clients" && <ClientsSection userId={userId} />}
           {section === "rappels" && (
             <RemindersSection
               userId={userId}
