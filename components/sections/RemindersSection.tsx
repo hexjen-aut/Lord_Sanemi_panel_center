@@ -11,7 +11,15 @@ import { Loader, Empty } from "./PlanningSection";
 
 const PROJECT_OPTIONS: ProjectKey[] = ["wenna", "myria", "hexjen", "fixi", "perso"];
 
-export function RemindersSection({ userId }: { userId: string }) {
+export function RemindersSection({
+  userId,
+  notifPermission,
+  onEnableNotifs,
+}: {
+  userId: string;
+  notifPermission: NotificationPermission | "unsupported";
+  onEnableNotifs: () => void;
+}) {
   const [reminders, setReminders] = useState<SanemiReminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -66,6 +74,22 @@ export function RemindersSection({ userId }: { userId: string }) {
           + Rappel
         </Button>
       </div>
+
+      {notifPermission === "default" && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-orange/30 bg-orange/5 px-4 py-3">
+          <div className="text-xs text-ink-muted">
+            Active les notifications navigateur pour être alerté dès qu&apos;un rappel arrive à échéance (en plus de l&apos;email).
+          </div>
+          <Button size="sm" onClick={onEnableNotifs}>
+            Activer
+          </Button>
+        </div>
+      )}
+      {notifPermission === "denied" && (
+        <div className="mb-4 text-xs text-ink-dim">
+          Notifications navigateur bloquées — réactive-les dans les réglages du site si tu changes d&apos;avis.
+        </div>
+      )}
 
       {loading ? (
         <Loader />
