@@ -34,6 +34,19 @@ export interface SanemiTransaction {
   amount: number;
   rev_type?: "prevu" | "imprévu";
   category: "besoins" | "projets" | "liberte" | "revenu";
+  related_order_id: string | null;
+  created_at: string;
+}
+
+export interface SanemiRecurringCharge {
+  id: string;
+  user_id: string;
+  label: string;
+  amount: number;
+  day_of_month: number;
+  category: "besoins" | "projets" | "liberte";
+  active: boolean;
+  last_paid_month: string | null;
   created_at: string;
 }
 

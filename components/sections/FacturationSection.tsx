@@ -194,8 +194,30 @@ export function FacturationSection({ userId }: { userId: string }) {
   }
 
   async function updateOrderStatus(id: string, status: FacturationOrder["status"]) {
+    const order = orders.find((o) => o.id === id);
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
     await supabase.from("facturation_orders").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+
+    if (status === "paye" && order) {
+      const { data: existing } = await supabase
+        .from("sanemi_transactions")
+        .select("id")
+        .eq("related_order_id", id)
+        .maybeSingle();
+      if (!existing) {
+        const amount = Number(order.amount_received) > 0 ? Number(order.amount_received) : orderTotal(order);
+        await supabase.from("sanemi_transactions").insert({
+          type: "revenu",
+          label: `Facture — ${order.facturation_clients?.name ?? "Client"}`,
+          source: "Facturation",
+          amount,
+          rev_type: "prevu",
+          category: "revenu",
+          related_order_id: id,
+          user_id: userId,
+        });
+      }
+    }
   }
 
   async function convertToFacture(id: string) {
