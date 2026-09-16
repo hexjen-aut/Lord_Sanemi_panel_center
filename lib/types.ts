@@ -46,6 +46,7 @@ export interface SanemiIdea {
   status: "nouvelle" | "en_cours" | "archivée";
   tags: string[];
   image_url: string | null;
+  audio_url: string | null;
   is_starred: boolean;
   created_at: string;
 }
@@ -73,11 +74,61 @@ export interface SanemiReminder {
   sent: boolean;
 }
 
-export interface SanemiSortiePref {
+export interface SanemiClient {
   id: string;
   user_id: string;
-  liked_places: string[];
+  name: string;
+  contact: string | null;
+  status: "contact" | "devis" | "signe" | "livre" | "perdu";
+  estimated_value: number;
+  next_action: string | null;
+  next_action_date: string | null;
+  notes: string | null;
+  created_at: string;
   updated_at: string;
+}
+
+export interface FacturationSettings {
+  user_id: string;
+  business_name: string;
+  address: string;
+  phone: string;
+  email: string;
+  updated_at: string;
+}
+
+export interface FacturationClient {
+  id: string;
+  user_id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  wenna_role: "vendeur" | "chasseur" | null;
+  created_at: string;
+}
+
+export interface FacturationOrder {
+  id: string;
+  user_id: string;
+  client_id: string;
+  doc_type: "devis" | "facture";
+  status: "brouillon" | "envoye" | "paye" | "annule";
+  transfer_fee: number;
+  amount_received: number;
+  notes: string | null;
+  order_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FacturationItem {
+  id: string;
+  order_id: string;
+  label: string;
+  quantity: number;
+  unit_price: number;
+  created_at: string;
 }
 
 export type SectionId =
@@ -86,5 +137,6 @@ export type SectionId =
   | "finance"
   | "idees"
   | "journal"
-  | "sorties"
+  | "clients"
+  | "facturation"
   | "rappels";
