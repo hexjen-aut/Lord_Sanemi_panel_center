@@ -7,6 +7,7 @@ interface OutingResult {
   name: string;
   description: string;
   area: string;
+  image: string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -27,8 +28,10 @@ export async function POST(req: NextRequest) {
       system:
         "Tu es un agent qui trouve de vraies sorties à Casablanca, Maroc, adaptées à une humeur et un budget donnés. " +
         "Utilise la recherche web pour vérifier que les lieux existent réellement, sont actuels et correspondent au budget. " +
+        "Pour chaque lieu, si tu croises pendant ta recherche une URL d'image directe (se terminant par .jpg, .jpeg, .png ou .webp) " +
+        "qui montre vraiment ce lieu, inclus-la dans \"image\". Si tu n'es pas sûr qu'elle montre le bon lieu, ou si tu n'en as pas trouvé, mets \"image\" à null — n'invente jamais d'URL. " +
         "Réponds UNIQUEMENT avec un tableau JSON (3 à 5 éléments), sans texte avant ni après, au format : " +
-        '[{"name":"...","description":"une phrase, ton direct","area":"quartier ou zone de Casablanca"}]',
+        '[{"name":"...","description":"une phrase, ton direct","area":"quartier ou zone de Casablanca","image":"URL directe ou null"}]',
       messages: [
         { role: "user", content: `Humeur : ${mood}. Budget : ${budgetLabel}. Trouve des sorties à Casablanca.` },
       ],
