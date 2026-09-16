@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal, Field, inputClass } from "@/components/ui/Modal";
 import { Loader } from "./PlanningSection";
+import { WennaStats } from "./WennaStats";
 
 const URGENCE_TONE = { critique: "red", haute: "orange", normale: "amber" } as const;
 const PROJECT_OPTIONS: ProjectKey[] = ["wenna", "myria", "hexjen", "fixi"];
@@ -147,6 +148,7 @@ export function ProjectsSection({ userId }: { userId: string }) {
               <div className="mb-2.5 mt-1.5 text-[11px] text-ink-muted">
                 {p.progress}% · {p.focus}
               </div>
+              {p.key === "wenna" && <WennaStats />}
               <div className="my-3.5 h-px bg-border" />
               {myObjectives.map((o) => (
                 <div key={o.id} className="border-b border-border py-1 text-xs last:border-none">
