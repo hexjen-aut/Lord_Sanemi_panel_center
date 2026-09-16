@@ -10,6 +10,27 @@ interface OutingResult {
   image: string | null;
 }
 
+interface CommonsSearchResponse {
+  query?: {
+    pages?: Record<string, { imageinfo?: { thumburl?: string }[] }>;
+  };
+}
+
+async function findCommonsImage(query: string): Promise<string | null> {
+  try {
+    const url =
+      "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6" +
+      `&gsrsearch=${encodeURIComponent(query)}&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as CommonsSearchResponse;
+    const pages = data.query?.pages ? Object.values(data.query.pages) : [];
+    return pages[0]?.imageinfo?.[0]?.thumburl ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { mood, budgetLabel } = (await req.json()) as { mood: string; budgetLabel: string };
 
@@ -28,10 +49,8 @@ export async function POST(req: NextRequest) {
       system:
         "Tu es un agent qui trouve de vraies sorties à Casablanca, Maroc, adaptées à une humeur et un budget donnés. " +
         "Utilise la recherche web pour vérifier que les lieux existent réellement, sont actuels et correspondent au budget. " +
-        "Pour chaque lieu, si tu croises pendant ta recherche une URL d'image directe (se terminant par .jpg, .jpeg, .png ou .webp) " +
-        "qui montre vraiment ce lieu, inclus-la dans \"image\". Si tu n'es pas sûr qu'elle montre le bon lieu, ou si tu n'en as pas trouvé, mets \"image\" à null — n'invente jamais d'URL. " +
         "Réponds UNIQUEMENT avec un tableau JSON (3 à 5 éléments), sans texte avant ni après, au format : " +
-        '[{"name":"...","description":"une phrase, ton direct","area":"quartier ou zone de Casablanca","image":"URL directe ou null"}]',
+        '[{"name":"...","description":"une phrase, ton direct","area":"quartier ou zone de Casablanca"}]',
       messages: [
         { role: "user", content: `Humeur : ${mood}. Budget : ${budgetLabel}. Trouve des sorties à Casablanca.` },
       ],
@@ -48,7 +67,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ results: null, reason: "no_json" });
     }
 
-    const results = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as OutingResult[];
+    const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Omit<OutingResult, "image">[];
+    const results: OutingResult[] = await Promise.all(
+      parsed.map(async (o) => ({ ...o, image: await findCommonsImage(`${o.name} Casablanca`) }))
+    );
     return NextResponse.json({ results });
   } catch (error) {
     console.error("outings AI search failed:", error);
