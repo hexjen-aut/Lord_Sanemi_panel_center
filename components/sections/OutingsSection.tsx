@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { BUDGETS, MOODS, OUTINGS_DB, type Mood, type Outing } from "@/lib/constants";
 import type { SanemiSortiePref } from "@/lib/types";
@@ -131,18 +132,21 @@ export function OutingsSection({ userId }: { userId: string }) {
               <div className="col-span-full py-7 text-center text-sm text-ink-dim">Essaie un autre filtre</div>
             ) : (
               results.map((o) => (
-                <div key={o.name} className="rounded-2xl border border-border bg-surface-2 p-4 transition-colors hover:border-border-strong">
-                  <div className="mb-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted">{o.area}</div>
-                  <div className="mb-1 font-display text-sm font-bold">{o.name}</div>
-                  <div className="mb-2.5 text-xs leading-relaxed text-ink-muted">{o.description}</div>
-                  <div className="flex items-center justify-between">
-                    <Badge tone="green">{budget === 0 ? "Gratuit" : "Budget OK"}</Badge>
-                    <button
-                      onClick={() => likeOuting(o.name)}
-                      className="cursor-pointer px-1 text-ink-muted hover:text-red"
-                    >
-                      {liked.includes(o.name) ? "♥" : "♡"}
-                    </button>
+                <div key={o.name} className="overflow-hidden rounded-2xl border border-border bg-surface-2 transition-colors hover:border-border-strong">
+                  {o.image && <OutingImage src={o.image} alt={o.name} />}
+                  <div className="p-4">
+                    <div className="mb-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted">{o.area}</div>
+                    <div className="mb-1 font-display text-sm font-bold">{o.name}</div>
+                    <div className="mb-2.5 text-xs leading-relaxed text-ink-muted">{o.description}</div>
+                    <div className="flex items-center justify-between">
+                      <Badge tone="green">{budget === 0 ? "Gratuit" : "Budget OK"}</Badge>
+                      <button
+                        onClick={() => likeOuting(o.name)}
+                        className="cursor-pointer px-1 text-ink-muted hover:text-red"
+                      >
+                        {liked.includes(o.name) ? "♥" : "♡"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -165,6 +169,23 @@ export function OutingsSection({ userId }: { userId: string }) {
           <div className="text-xs text-ink-muted">Marque des lieux ♡ pour construire ton profil</div>
         )}
       </Card>
+    </div>
+  );
+}
+
+function OutingImage({ src, alt }: { src: string; alt: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) return null;
+  return (
+    <div className="relative h-32 w-full bg-surface-3">
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover"
+        unoptimized
+        onError={() => setBroken(true)}
+      />
     </div>
   );
 }

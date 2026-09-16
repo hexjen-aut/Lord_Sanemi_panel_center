@@ -53,6 +53,7 @@ export interface Outing {
   name: string;
   description: string;
   area: string;
+  image?: string | null;
 }
 
 export type Mood = "calme" | "social" | "creatif" | "sport" | "explorer" | "manger";
