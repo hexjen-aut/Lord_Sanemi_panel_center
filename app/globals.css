@@ -75,3 +75,19 @@ body {
 .animate-fade-in {
   animation: fade-in 0.15s ease;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-invoice,
+  #print-invoice * {
+    visibility: visible;
+  }
+  #print-invoice {
+    position: absolute;
+    inset: 0;
+    color: #000;
+    background: #fff;
+  }
+}

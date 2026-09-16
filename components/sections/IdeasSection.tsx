@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { PROJECT_COLORS, PROJECT_NAMES } from "@/lib/constants";
@@ -31,6 +31,11 @@ export function IdeasSection({ userId }: { userId: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioPreview, setAudioPreview] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const [form, setForm] = useState({
     title: "",
     content: "",
@@ -67,16 +72,62 @@ export function IdeasSection({ userId }: { userId: string }) {
     setImagePreview(URL.createObjectURL(file));
   }
 
+  function pickAudioFile(file: File | null) {
+    if (!file) return;
+    setAudioFile(file);
+    setAudioPreview(URL.createObjectURL(file));
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setAudioFile(new File([blob], `note-${Date.now()}.webm`, { type: "audio/webm" }));
+        setAudioPreview(URL.createObjectURL(blob));
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      // micro indisponible ou permission refusée — l'upload de fichier reste possible
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
+  }
+
+  function clearAudio() {
+    setAudioFile(null);
+    setAudioPreview(null);
+  }
+
   async function saveIdea() {
     if (!form.title.trim()) return;
     let imageUrl: string | null = null;
     if (imageFile) {
       const ext = imageFile.name.split(".").pop();
       const path = `${userId}/${Date.now()}.${ext}`;
-      const { data: up } = await supabase.storage.from("ideas-images").upload(path, imageFile);
+      const { data: up } = await supabase.storage.from("ideas-media").upload(path, imageFile);
       if (up) {
-        const { data: pub } = supabase.storage.from("ideas-images").getPublicUrl(path);
+        const { data: pub } = supabase.storage.from("ideas-media").getPublicUrl(path);
         imageUrl = pub?.publicUrl ?? null;
+      }
+    }
+    let audioUrl: string | null = null;
+    if (audioFile) {
+      const ext = audioFile.name.split(".").pop() || "webm";
+      const path = `${userId}/${Date.now()}-audio.${ext}`;
+      const { data: up } = await supabase.storage.from("ideas-media").upload(path, audioFile);
+      if (up) {
+        const { data: pub } = supabase.storage.from("ideas-media").getPublicUrl(path);
+        audioUrl = pub?.publicUrl ?? null;
       }
     }
     await supabase.from("sanemi_ideas").insert({
@@ -89,6 +140,7 @@ export function IdeasSection({ userId }: { userId: string }) {
         .map((t) => t.trim())
         .filter(Boolean),
       image_url: imageUrl,
+      audio_url: audioUrl,
       is_starred: false,
       user_id: userId,
     });
@@ -96,6 +148,7 @@ export function IdeasSection({ userId }: { userId: string }) {
     setForm({ title: "", content: "", project: "general", status: "nouvelle", tags: "" });
     setImageFile(null);
     setImagePreview(null);
+    clearAudio();
     setModalOpen(false);
   }
 
@@ -148,6 +201,11 @@ export function IdeasSection({ userId }: { userId: string }) {
                 </button>
               </div>
               <div className="mb-2 text-xs leading-relaxed text-ink-muted">{i.content}</div>
+              {i.audio_url && (
+                <audio controls src={i.audio_url} className="mb-2 h-8 w-full">
+                  Ton navigateur ne supporte pas la lecture audio.
+                </audio>
+              )}
               <div className="mb-1.5 flex items-center justify-between">
                 <Badge tone={PROJECT_COLORS[i.project]}>{PROJECT_NAMES[i.project]}</Badge>
                 <Badge tone={i.status === "nouvelle" ? "orange" : i.status === "en_cours" ? "green" : "muted"}>
@@ -248,6 +306,37 @@ export function IdeasSection({ userId }: { userId: string }) {
               onChange={(e) => pickImage(e.target.files?.[0] ?? null)}
             />
           </label>
+        </Field>
+        <Field label="Note vocale (optionnel)">
+          {audioPreview ? (
+            <div className="flex items-center gap-2">
+              <audio controls src={audioPreview} className="h-8 flex-1" />
+              <button onClick={clearAudio} className="cursor-pointer px-1 text-ink-dim hover:text-red">
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={recording ? "primary" : "default"}
+                className="flex-1"
+                onClick={recording ? stopRecording : startRecording}
+              >
+                {recording ? "⏹ Arrêter" : "🎙 Enregistrer"}
+              </Button>
+              <label className="flex cursor-pointer items-center rounded-lg border border-border-strong bg-surface-2 px-3 text-xs text-ink-muted hover:text-ink">
+                Importer
+                <input
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => pickAudioFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </div>
+          )}
         </Field>
         <Button variant="primary" className="w-full" onClick={saveIdea}>
           Capturer ✦
