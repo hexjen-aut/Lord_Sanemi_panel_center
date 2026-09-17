@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Syne, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -23,6 +23,17 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   title: "Sanemi OS — Centre de commandement",
   description: "Dashboard personnel de Lord Sanemi — Hexjen Conceptions",
+  appleWebApp: {
+    title: "Sanemi OS",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ff6a00",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
