@@ -47,6 +47,93 @@ function periodStart(period: Period): Date | null {
   return monday;
 }
 
+function lastMonths(n: number): { key: string; label: string }[] {
+  const now = new Date();
+  const months = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleDateString("fr-FR", { month: "short" }),
+    });
+  }
+  return months;
+}
+
+function MonthlyChart({ txs }: { txs: SanemiTransaction[] }) {
+  const monthly = useMemo(() => {
+    const months = lastMonths(6);
+    return months.map((m) => {
+      const rev = txs
+        .filter((t) => t.type === "revenu" && t.created_at.slice(0, 7) === m.key)
+        .reduce((s, t) => s + Number(t.amount), 0);
+      const dep = txs
+        .filter((t) => t.type === "depense" && t.created_at.slice(0, 7) === m.key)
+        .reduce((s, t) => s + Number(t.amount), 0);
+      return { ...m, rev, dep };
+    });
+  }, [txs]);
+
+  const W = 600;
+  const H = 140;
+  const PAD = 12;
+  const max = Math.max(1, ...monthly.flatMap((m) => [m.rev, m.dep]));
+  const x = (i: number) => PAD + (i * (W - PAD * 2)) / Math.max(1, monthly.length - 1);
+  const y = (v: number) => H - PAD - (v / max) * (H - PAD * 2);
+  const revPoints = monthly.map((m, i) => `${x(i)},${y(m.rev)}`).join(" ");
+  const depPoints = monthly.map((m, i) => `${x(i)},${y(m.dep)}`).join(" ");
+
+  return (
+    <Card>
+      <CardTitle>Évolution mensuelle (6 derniers mois)</CardTitle>
+      <svg viewBox={`0 0 ${W} ${H + 20}`} className="w-full" role="img" aria-label="Évolution mensuelle des revenus et dépenses">
+        {[0, 0.5, 1].map((f) => (
+          <line
+            key={f}
+            x1={PAD}
+            x2={W - PAD}
+            y1={H - PAD - f * (H - PAD * 2)}
+            y2={H - PAD - f * (H - PAD * 2)}
+            stroke="var(--color-border)"
+            strokeWidth={1}
+          />
+        ))}
+        <polyline points={revPoints} fill="none" stroke="var(--color-green)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        <polyline
+          points={depPoints}
+          fill="none"
+          stroke="var(--color-red)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="5 4"
+        />
+        {monthly.map((m, i) => (
+          <g key={m.key}>
+            <circle cx={x(i)} cy={y(m.rev)} r={3.5} fill="var(--color-green)">
+              <title>{`${m.label} — Revenus : ${fmt(m.rev)}`}</title>
+            </circle>
+            <rect x={x(i) - 3} y={y(m.dep) - 3} width={6} height={6} fill="var(--color-red)">
+              <title>{`${m.label} — Dépenses : ${fmt(m.dep)}`}</title>
+            </rect>
+            <text x={x(i)} y={H + 14} textAnchor="middle" className="fill-ink-dim" style={{ fontSize: 9 }}>
+              {m.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="mt-1 flex items-center gap-4 text-[11px] text-ink-muted">
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-green" /> Revenus (ligne pleine)
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 bg-red" /> Dépenses (pointillé)
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function currentMonthKey() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -271,6 +358,10 @@ export function FinanceSection({ userId }: { userId: string }) {
           <CardTitle>Disponible</CardTitle>
           <div className="font-display text-2xl font-bold text-teal">{fmt(totals.dispo)}</div>
         </Card>
+      </div>
+
+      <div className="mb-4">
+        <MonthlyChart txs={txs} />
       </div>
 
       <div className="grid gap-3.5 lg:grid-cols-2">
