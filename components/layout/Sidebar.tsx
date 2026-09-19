@@ -11,6 +11,7 @@ const NAV: { id: SectionId; label: string }[] = [
   { id: "journal", label: "Journal" },
   { id: "clients", label: "Clients" },
   { id: "facturation", label: "Facturation" },
+  { id: "patterns", label: "Patterns" },
   { id: "rappels", label: "Rappels" },
 ];
 
