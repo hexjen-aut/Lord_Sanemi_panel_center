@@ -144,6 +144,88 @@ export interface FacturationItem {
   created_at: string;
 }
 
+export interface SanemiPattern {
+  id: string;
+  user_id: string;
+  name: string;
+  objectif: "observer" | "reduire" | "arreter";
+  is_intime: boolean;
+  created_at: string;
+}
+
+export interface SanemiAlternative {
+  id: string;
+  user_id: string;
+  pattern_id: string;
+  label: string;
+  created_at: string;
+}
+
+export type Ressenti = "apaise" | "satisfait" | "neutre" | "vide" | "regret";
+
+export interface SanemiPatternLog {
+  id: string;
+  user_id: string;
+  pattern_id: string;
+  logged_at: string;
+  intensite: number;
+  resultat: "cede" | "resiste" | null;
+  emotion: string | null;
+  activite: string | null;
+  lieu: string | null;
+  social: boolean | null;
+  energie: number | null;
+  ressenti_apres: Ressenti | null;
+  alternative_id: string | null;
+  intensite_apres: number | null;
+  note: string | null;
+  is_encrypted: boolean;
+}
+
+export interface SanemiStrategy {
+  id: string;
+  user_id: string;
+  pattern_id: string;
+  declencheur: string;
+  action: string;
+  active: boolean;
+  created_at: string;
+}
+
+export interface SanemiEnvie {
+  id: string;
+  user_id: string;
+  label: string;
+  categorie: string;
+  intensite: number;
+  recurrence: number;
+  implique_autrui: boolean;
+  is_encrypted: boolean;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SanemiEnvieTirage {
+  id: string;
+  user_id: string;
+  envie_id: string;
+  tire_at: string;
+  intensite: number | null;
+  statut: "realisee" | "planifiee" | "non" | null;
+  solution: string | null;
+  satisfaction: number | null;
+  ressenti_apres: Ressenti | null;
+  is_encrypted: boolean;
+}
+
+export interface SanemiVault {
+  user_id: string;
+  salt: string;
+  check_cipher: string;
+  created_at: string;
+}
+
 export type SectionId =
   | "planning"
   | "projets"
@@ -152,4 +234,5 @@ export type SectionId =
   | "journal"
   | "clients"
   | "facturation"
+  | "patterns"
   | "rappels";
