@@ -29,7 +29,7 @@ import {
   signals,
   weeklyData,
 } from "@/lib/patterns/analytics";
-import { drawWheel, spinWheel, type WheelItem } from "@/lib/patterns/wheel";
+import { drawWheel, spinWheel, type WheelItem } from "@/lib/wheel";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
