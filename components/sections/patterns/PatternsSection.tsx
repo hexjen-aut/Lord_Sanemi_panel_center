@@ -29,7 +29,7 @@ import {
   signals,
   weeklyData,
 } from "@/lib/patterns/analytics";
-import { drawWheel, spinWheel, type WheelItem } from "@/lib/patterns/wheel";
+import { drawWheel, spinWheel, type WheelItem } from "@/lib/wheel";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -37,8 +37,10 @@ import { Chip } from "@/components/ui/Chip";
 import { Modal, Field, inputClass } from "@/components/ui/Modal";
 import { Loader, Empty } from "../PlanningSection";
 import { Bars } from "./Bars";
+import { RelationsTab } from "./RelationsTab";
+import { SchemasTab } from "./SchemasTab";
 
-type Tab = "log" | "lecture" | "roue" | "plans" | "reglages";
+type Tab = "log" | "lecture" | "roue" | "plans" | "relations" | "schemas" | "reglages";
 
 type Opt = string | [string, string];
 function optVal(o: Opt) {
@@ -582,6 +584,8 @@ export function PatternsSection() {
     { key: "lecture", label: "Lecture" },
     { key: "roue", label: "Roue" },
     { key: "plans", label: "Plans" },
+    { key: "relations", label: "Relations" },
+    { key: "schemas", label: "Schémas" },
     { key: "reglages", label: "Réglages" },
   ];
 
@@ -607,7 +611,7 @@ export function PatternsSection() {
         ))}
       </div>
 
-      {patterns.length > 1 && tab !== "roue" && (
+      {patterns.length > 1 && tab !== "roue" && tab !== "relations" && tab !== "schemas" && (
         <div className="mb-4 flex flex-wrap gap-1.5">
           {patterns.map((p) => (
             <Chip key={p.id} active={p.id === pid} onClick={() => setPid(p.id)}>
@@ -669,6 +673,10 @@ export function PatternsSection() {
           onDelete={deletePlan}
         />
       )}
+
+      {tab === "relations" && <RelationsTab />}
+
+      {tab === "schemas" && <SchemasTab />}
 
       {tab === "reglages" && (
         <ReglagesTab

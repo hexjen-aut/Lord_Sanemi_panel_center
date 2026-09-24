@@ -10,6 +10,8 @@ import { Chip } from "@/components/ui/Chip";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal, Field, inputClass } from "@/components/ui/Modal";
 import { Loader, Empty } from "./PlanningSection";
+import { AccountsCard } from "./finance/AccountsCard";
+import { PlannedExpensesCard } from "./finance/PlannedExpensesCard";
 
 const RULES = [
   { key: "besoins", pct: 0.5, label: "🏠 Besoins — 50%", desc: "Loyer, nourriture, transport, téléphone", tone: "green" as const },
@@ -418,6 +420,9 @@ export function FinanceSection({ userId }: { userId: string }) {
               })
             )}
           </Card>
+
+          <AccountsCard />
+          <PlannedExpensesCard userId={userId} />
         </div>
 
         <div className="flex flex-col gap-3.5">
