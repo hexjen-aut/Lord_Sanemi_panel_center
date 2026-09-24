@@ -226,6 +226,78 @@ export interface SanemiVault {
   created_at: string;
 }
 
+export interface SanemiRelation {
+  id: string;
+  user_id: string;
+  name: string;
+  relation_type: "famille" | "ami" | "partenaire" | "collegue" | "autre";
+  notes: string | null;
+  created_at: string;
+}
+
+export interface SanemiRelationEntry {
+  id: string;
+  user_id: string;
+  relation_id: string;
+  logged_at: string;
+  dynamique: string | null;
+  emotion: string | null;
+  intensite: number | null;
+  description: string | null;
+  created_at: string;
+}
+
+export interface SanemiSchema {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface SanemiSchemaLog {
+  id: string;
+  user_id: string;
+  schema_id: string;
+  logged_at: string;
+  situation: string;
+  pensee_automatique: string | null;
+  emotion: string | null;
+  intensite: number | null;
+  reaction: string | null;
+  created_at: string;
+}
+
+export interface SanemiPlannedExpense {
+  id: string;
+  user_id: string;
+  label: string;
+  amount: number;
+  expected_date: string;
+  note: string | null;
+  paid: boolean;
+  created_at: string;
+}
+
+export interface SanemiAccount {
+  id: string;
+  user_id: string;
+  name: string;
+  account_type: "perso" | "business";
+  balance: number;
+  created_at: string;
+}
+
+export interface SanemiAccountTransaction {
+  id: string;
+  user_id: string;
+  account_id: string;
+  type: "depot" | "retrait";
+  amount: number;
+  note: string | null;
+  created_at: string;
+}
+
 export type SectionId =
   | "planning"
   | "projets"
