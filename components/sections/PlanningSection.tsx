@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { dayOfWeek, weekNumber } from "@/lib/date";
 import { PROJECT_COLORS, PROJECT_NAMES, WEEK_DAYS, WEEK_DAYS_FULL, WEEK_MODES } from "@/lib/constants";
 import type { ProjectKey, SanemiTask } from "@/lib/types";
+import { drawWheel, spinWheel, type WheelItem } from "@/lib/wheel";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -48,6 +49,41 @@ export function PlanningSection({ userId }: { userId: string }) {
 
   const todayTasks = useMemo(() => tasks.filter((t) => t.day_of_week === today), [tasks, today]);
   const doneCount = todayTasks.filter((t) => t.done).length;
+  const pendingTasks = useMemo(() => todayTasks.filter((t) => !t.done), [todayTasks]);
+
+  const wheelCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [wheelRot, setWheelRot] = useState(0);
+  const [spinning, setSpinning] = useState(false);
+  const [pickedTaskId, setPickedTaskId] = useState<string | null>(null);
+  const wheelItems: WheelItem[] = pendingTasks.map((t) => ({ id: t.id, label: t.title, w: 1 }));
+
+  useEffect(() => {
+    const c = wheelCanvasRef.current;
+    if (c) drawWheel(c, wheelItems, wheelRot);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingTasks, wheelRot]);
+
+  const pickedTask = pendingTasks.find((t) => t.id === pickedTaskId) ?? null;
+
+  useEffect(() => {
+    function onResize() {
+      const c = wheelCanvasRef.current;
+      if (c) drawWheel(c, wheelItems, wheelRot);
+    }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingTasks]);
+
+  async function spinTasks() {
+    const c = wheelCanvasRef.current;
+    if (!c || wheelItems.length < 2) return;
+    setSpinning(true);
+    setPickedTaskId(null);
+    const i = await spinWheel(c, wheelItems, wheelRot, setWheelRot);
+    setSpinning(false);
+    if (i >= 0) setPickedTaskId(wheelItems[i].id);
+  }
 
   async function toggleTask(id: string, done: boolean) {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done } : t)));
@@ -181,6 +217,32 @@ export function PlanningSection({ userId }: { userId: string }) {
         </div>
       </Card>
 
+      {pendingTasks.length > 0 && (
+        <Card className="mb-4">
+          <CardTitle>Par quoi commencer ?</CardTitle>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+            <div className="relative aspect-square w-32 shrink-0">
+              <canvas ref={wheelCanvasRef} className="h-full w-full" aria-label="Roue des tâches du jour" />
+            </div>
+            <div className="flex-1">
+              <Button variant="primary" size="sm" onClick={spinTasks} disabled={spinning || wheelItems.length < 2}>
+                Tourner la roue
+              </Button>
+              {wheelItems.length < 2 && <p className="mt-2 text-xs text-ink-dim">Ajoute au moins deux tâches pour tourner la roue.</p>}
+              {pickedTask && (
+                <div className="mt-3 rounded-lg border border-orange/30 bg-orange/5 p-3">
+                  <div className="text-[10px] uppercase tracking-wide text-ink-muted">La roue a choisi</div>
+                  <div className="font-display text-sm font-bold">{pickedTask.title}</div>
+                  <Button size="sm" className="mt-2" onClick={() => toggleTask(pickedTask.id, true)}>
+                    Marquer fait
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="grid gap-3.5 md:grid-cols-2">
         <Card>
           <CardTitle>Tâches du jour — {WEEK_DAYS_FULL[today]}</CardTitle>
@@ -191,7 +253,12 @@ export function PlanningSection({ userId }: { userId: string }) {
           ) : (
             <div>
               {todayTasks.map((t) => (
-                <div key={t.id} className="flex items-start gap-2.5 border-b border-border py-2.5 last:border-none">
+                <div
+                  key={t.id}
+                  className={`flex items-start gap-2.5 rounded-lg border-b border-border px-1.5 py-2.5 last:border-none ${
+                    t.id === pickedTaskId ? "border border-orange/40 bg-orange/5" : ""
+                  }`}
+                >
                   <button
                     onClick={() => toggleTask(t.id, !t.done)}
                     className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-[1.5px] cursor-pointer ${

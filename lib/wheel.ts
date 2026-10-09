@@ -1,5 +1,4 @@
-import { WHEEL_COLORS } from "./constants";
-
+const WHEEL_COLORS = ["#F2A65A", "#8CC7A1", "#B7A6E8", "#E8C872", "#7FB3D5", "#D97A9B", "#C9B79C", "#9FD3C7"];
 const TAU = Math.PI * 2;
 
 export interface WheelItem {
